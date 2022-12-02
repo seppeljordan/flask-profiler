@@ -188,18 +188,6 @@ class Sqlite:
             rows = self.cursor.fetchall()
         return [self._row_to_record(row) for row in rows]
 
-    def get(self, measurement_id: int) -> Record:
-        with self.lock:
-            self.cursor.execute(
-                'SELECT * FROM "{table_name}" WHERE ID = :id'.format(
-                    table_name=self.table_name,
-                ),
-                dict(id=measurement_id),
-            )
-            rows = self.cursor.fetchall()
-        record = rows[0]
-        return self._row_to_record(record)
-
     def truncate(self) -> bool:
         with self.lock:
             self.cursor.execute("DELETE FROM {0}".format(self.table_name))
@@ -207,16 +195,6 @@ class Sqlite:
         # Making the api match with mongo collection, this function must return
         # True or False based on success of this delete operation
         return True if self.cursor.rowcount else False
-
-    def delete(self, measuremt_id: int) -> None:
-        with self.lock:
-            self.cursor.execute(
-                'DELETE FROM "{table_name}" WHERE ID = :id'.format(
-                    table_name=self.table_name,
-                ),
-                dict(id=measuremt_id),
-            )
-            return self.connection.commit()
 
     def _row_to_record(self, row) -> Record:
         raw_context = json.loads(row[7])

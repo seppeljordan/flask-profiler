@@ -14,6 +14,10 @@
             inherit system;
             overlays = [ self.overlays.default ];
           };
+          pythonEnv = pkgs.python3.withPackages (p:
+            [ p.mypy p.flake8 p.isort p.black ]
+            ++ pkgs.python3.pkgs.flask-profiler.buildInputs
+            ++ pkgs.python3.pkgs.flask-profiler.propagatedBuildInputs);
         in {
           packages = { default = pkgs.python3.pkgs.flask-profiler; };
           devShells.default = pkgs.mkShell {
@@ -31,19 +35,25 @@
           checks = {
             black-check = pkgs.runCommand "black-check" { } ''
               cd ${self}
-              ${pkgs.python3.pkgs.black}/bin/black --check .
+              ${pythonEnv}/bin/black --check .
               mkdir $out
             '';
             isort-check = pkgs.runCommand "isort-check" { } ''
               cd ${self}
-              ${pkgs.python3.pkgs.isort}/bin/isort --check .
+              ${pythonEnv}/bin/isort --check .
               mkdir $out
             '';
             flake8-check = pkgs.runCommand "flake8-check" { } ''
               cd ${self}
-              ${pkgs.python3.pkgs.flake8}/bin/flake8
+              ${pythonEnv}/bin/flake8
               mkdir $out
             '';
+            mypy-check = pkgs.runCommand "flake8-check" { } ''
+              cd ${self}
+              ${pythonEnv}/bin/mypy
+              mkdir $out
+            '';
+            python310-package = pkgs.python310.pkgs.flask-profiler;
           };
         });
       supportedSystems = flake-utils.lib.defaultSystems;
