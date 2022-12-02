@@ -50,16 +50,21 @@ class RequestMetadata:
     @classmethod
     def from_json(cls, json_object: Any) -> RequestMetadata:
         if json_object.get("endpoint_name") is not None:
-            endpoint_name = json_object.get("endpoint_name")
+            endpoint_name = json_object["endpoint_name"]
         else:
             endpoint_name = json_object["func"]
+
+        if json_object.get("client_address") is not None:
+            client_address = json_object["client_address"]
+        else:
+            client_address = json_object["ip"]
         return cls(
             url=json_object["url"],
             args=json_object["args"],
             form=json_object["form"],
             headers=json_object["headers"],
             endpoint_name=endpoint_name,
-            client_address=json_object["client_address"],
+            client_address=client_address,
         )
 
 

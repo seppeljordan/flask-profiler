@@ -11,7 +11,7 @@ class TestDeserialization(TestCase):
             form={},
             headers={},
             endpoint_name="",
-            client_address={},
+            client_address="",
         )
         metadata = RequestMetadata.from_json(data)
         assert metadata
@@ -23,7 +23,7 @@ class TestDeserialization(TestCase):
             form={},
             headers={},
             endpoint_name="",
-            client_address={},
+            client_address="",
             body="",
         )
         metadata = RequestMetadata.from_json(data)
@@ -39,8 +39,24 @@ class TestDeserialization(TestCase):
             form={},
             headers={},
             func=expected_name,
-            client_address={},
+            client_address="",
             body="",
         )
         metadata = RequestMetadata.from_json(data)
         assert metadata.endpoint_name == expected_name
+
+    def test_can_construct_object_when_there_is_no_client_address_but_ip(
+        self,
+    ) -> None:
+        expected_ip = "1.2.3.4"
+        data = dict(
+            url="test",
+            args={},
+            form={},
+            headers={},
+            endpoint_name="",
+            ip=expected_ip,
+            body="",
+        )
+        metadata = RequestMetadata.from_json(data)
+        assert metadata.client_address == expected_ip
