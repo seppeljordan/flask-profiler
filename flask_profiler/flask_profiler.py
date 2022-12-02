@@ -77,7 +77,7 @@ def getMeasurementsSummary() -> ResponseT:
     config = injector.get_configuration()
     args = dict(request.args.items())
     query = controller.parse_filter(args)
-    measurements = config.collection.getSummary(query)
+    measurements = config.collection.get_summary(query)
     view_model = presenter.present_summaries(measurements)
     return jsonify(view_model)
 
@@ -94,13 +94,16 @@ def getContext(measurementId) -> ResponseT:
 @auth.login_required
 def getRequestsTimeseries() -> ResponseT:
     injector = DependencyInjector()
+    clock = injector.get_clock()
     config = injector.get_configuration()
     args = dict(request.args.items())
     return jsonify(
         {
-            "series": config.collection.getTimeseries(
-                startedAt=float(args.get("startedAt", time.time() - 3600 * 24 * 7)),
-                endedAt=float(args.get("endedAt", time.time())),
+            "series": config.collection.get_timeseries(
+                started_at=float(
+                    args.get("startedAt", clock.get_epoch() - 3600 * 24 * 7)
+                ),
+                ended_at=float(args.get("endedAt", clock.get_epoch())),
                 interval=args.get("interval", "hourly"),
             )
         }
@@ -111,13 +114,16 @@ def getRequestsTimeseries() -> ResponseT:
 @auth.login_required
 def getMethodDistribution() -> ResponseT:
     injector = DependencyInjector()
+    clock = injector.get_clock()
     config = injector.get_configuration()
     args = dict(request.args.items())
     return jsonify(
         {
-            "distribution": config.collection.getMethodDistribution(
-                startedAt=float(args.get("startedAt", time.time() - 3600 * 24 * 7)),
-                endedAt=float(args.get("endedAt", time.time())),
+            "distribution": config.collection.get_method_distribution(
+                started_at=float(
+                    args.get("startedAt", clock.get_epoch() - 3600 * 24 * 7)
+                ),
+                ended_at=float(args.get("endedAt", clock.get_epoch())),
             )
         }
     )

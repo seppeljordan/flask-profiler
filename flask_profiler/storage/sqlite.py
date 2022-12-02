@@ -98,8 +98,8 @@ class Sqlite:
 
             self.connection.commit()
 
-    def getTimeseries(
-        self, startedAt: float, endedAt: float, interval: str
+    def get_timeseries(
+        self, started_at: float, ended_at: float, interval: str
     ) -> Dict[Tuple[datetime, str], int]:
         if interval == "daily":
             interval_seconds = 3600 * 24  # daily
@@ -117,17 +117,19 @@ class Sqlite:
                 table_name=self.table_name
             )
             self.cursor.execute(
-                sql, dict(endedAt=endedAt, startedAt=startedAt, dateFormat=dateFormat)
+                sql, dict(endedAt=ended_at, startedAt=started_at, dateFormat=dateFormat)
             )
             rows = self.cursor.fetchall()
         series = {}
-        for i in range(int(startedAt), int(endedAt) + 1, interval_seconds):
+        for i in range(int(started_at), int(ended_at) + 1, interval_seconds):
             series[formatDate(i, dateFormat)] = 0
         for row in rows:
             series[formatDate(row[0], dateFormat)] = row[1]
         return series
 
-    def getMethodDistribution(self, startedAt: float, endedAt: float) -> Dict[str, int]:
+    def get_method_distribution(
+        self, started_at: float, ended_at: float
+    ) -> Dict[str, int]:
         with self.lock:
             sql = """SELECT
                     method, count(id) as count
@@ -138,7 +140,7 @@ class Sqlite:
                 table_name=self.table_name
             )
 
-            self.cursor.execute(sql, dict(endedAt=endedAt, startedAt=startedAt))
+            self.cursor.execute(sql, dict(endedAt=ended_at, startedAt=started_at))
             rows = self.cursor.fetchall()
         results = {}
         for row in rows:
@@ -231,7 +233,7 @@ class Sqlite:
             name=row[8],
         )
 
-    def getSummary(self, criteria: FilterQuery) -> List[Summary]:
+    def get_summary(self, criteria: FilterQuery) -> List[Summary]:
         conditions = "WHERE 1=1 and "
         if criteria.startedAt:
             conditions = conditions + "startedAt>={0} AND ".format(
@@ -272,9 +274,3 @@ class Sqlite:
                 )
                 for row in self.cursor.fetchall()
             ]
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self.connection.close()
