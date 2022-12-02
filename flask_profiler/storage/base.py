@@ -9,7 +9,7 @@ class BaseStorage(Protocol):
     def filter(self, criteria: FilterQuery) -> List[Record]:
         ...
 
-    def getSummary(self, criteria: FilterQuery) -> List[Summary]:
+    def get_summary(self, criteria: FilterQuery) -> List[Summary]:
         ...
 
     def get(self, measurementId) -> Record:
@@ -24,12 +24,14 @@ class BaseStorage(Protocol):
     def truncate(self) -> bool:
         ...
 
-    def getTimeseries(
-        self, startedAt: float, endedAt: float, interval: str
+    def get_timeseries(
+        self, started_at: float, ended_at: float, interval: str
     ) -> Dict[Tuple[datetime, str], int]:
         ...
 
-    def getMethodDistribution(self, startedAt: float, endedAt: float) -> Dict[str, int]:
+    def get_method_distribution(
+        self, started_at: float, ended_at: float
+    ) -> Dict[str, int]:
         ...
 
 
