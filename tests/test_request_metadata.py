@@ -10,7 +10,7 @@ class TestDeserialization(TestCase):
             args={},
             form={},
             headers={},
-            endpoint_name={},
+            endpoint_name="",
             client_address={},
         )
         metadata = RequestMetadata.from_json(data)
@@ -22,9 +22,25 @@ class TestDeserialization(TestCase):
             args={},
             form={},
             headers={},
-            endpoint_name={},
+            endpoint_name="",
             client_address={},
             body="",
         )
         metadata = RequestMetadata.from_json(data)
         assert metadata
+
+    def test_can_construct_object_when_there_is_func_but_not_endpoint_name(
+        self,
+    ) -> None:
+        expected_name = "testname"
+        data = dict(
+            url="test",
+            args={},
+            form={},
+            headers={},
+            func=expected_name,
+            client_address={},
+            body="",
+        )
+        metadata = RequestMetadata.from_json(data)
+        assert metadata.endpoint_name == expected_name
