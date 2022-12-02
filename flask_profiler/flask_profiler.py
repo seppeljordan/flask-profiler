@@ -80,14 +80,6 @@ def getMeasurementsSummary() -> ResponseT:
     return jsonify(view_model)
 
 
-@flask_profiler.route("/api/measurements/<measurement_id>")
-@auth.login_required
-def getContext(measurement_id: str) -> ResponseT:
-    injector = DependencyInjector()
-    config = injector.get_configuration()
-    return jsonify(config.collection.get(measurement_id))
-
-
 @flask_profiler.route("/api/measurements/timeseries/")
 @auth.login_required
 def getRequestsTimeseries() -> ResponseT:
