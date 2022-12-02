@@ -12,7 +12,7 @@ class BaseStorage(Protocol):
     def get_summary(self, criteria: FilterQuery) -> List[Summary]:
         ...
 
-    def get(self, measurementId) -> Record:
+    def get(self, measurement_id: str) -> Record:
         ...
 
     def insert(self, measurement: Measurement) -> None:

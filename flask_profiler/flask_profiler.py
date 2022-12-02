@@ -4,8 +4,7 @@ import functools
 import logging
 import re
 import time
-from typing import Callable, Optional, TypeVar, Union, cast
-from uuid import UUID
+from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
 from flask import Response as FlaskResponse
@@ -38,7 +37,6 @@ def verify_password(username, password):
     config = injector.get_configuration()
     if not config.is_basic_auth_enabled:
         return True
-
     if (
         username == config.basic_auth_username
         and password == config.basic_auth_password
@@ -82,12 +80,12 @@ def getMeasurementsSummary() -> ResponseT:
     return jsonify(view_model)
 
 
-@flask_profiler.route("/api/measurements/<measurementId>")
+@flask_profiler.route("/api/measurements/<measurement_id>")
 @auth.login_required
-def getContext(measurementId) -> ResponseT:
+def getContext(measurement_id: str) -> ResponseT:
     injector = DependencyInjector()
     config = injector.get_configuration()
-    return jsonify(config.collection.get(measurementId))
+    return jsonify(config.collection.get(measurement_id))
 
 
 @flask_profiler.route("/api/measurements/timeseries/")
@@ -234,25 +232,20 @@ def init_app(app: Flask) -> None:
 
     Initialization must be one after all routes you want to monitor
     are registered with your app.
-
     """
     injector = DependencyInjector(app=app)
     config = injector.get_configuration()
-
     if not config.enabled:
         return
-
     wrapAppEndpoints(app)
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
-
     if not config.is_basic_auth_enabled:
         logging.warning(" * CAUTION: flask-profiler is working without basic auth!")
 
 
-def sanatize_kwargs(kwargs):
+def sanatize_kwargs(kwargs: Dict[str, Any]) -> Dict[str, str]:
     for key, value in list(kwargs.items()):
-        if isinstance(value, UUID):
-            kwargs[key] = str(value)
+        kwargs[key] = str(value)
     return kwargs
 
 
