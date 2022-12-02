@@ -220,7 +220,7 @@ class Sqlite:
 
     def _row_to_record(self, row) -> Record:
         raw_context = json.loads(row[7])
-        context = RequestMetadata(**raw_context)
+        context = RequestMetadata.from_json(raw_context)
         return Record(
             id=row[0],
             startedAt=row[1],

@@ -47,6 +47,17 @@ class RequestMetadata:
     def serialize_to_json(self) -> Dict[str, Any]:
         return asdict(self)
 
+    @classmethod
+    def from_json(cls, json_object: Any) -> RequestMetadata:
+        return cls(
+            url=json_object["url"],
+            args=json_object["args"],
+            form=json_object["form"],
+            headers=json_object["headers"],
+            endpoint_name=json_object["endpoint_name"],
+            client_address=json_object["client_address"],
+        )
+
 
 DECIMAL_PLACES = 6
 
