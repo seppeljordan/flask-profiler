@@ -17,10 +17,15 @@
         in {
           packages = { default = pkgs.python3.pkgs.flask-profiler; };
           devShells.default = pkgs.mkShell {
-            packages = with pkgs.python3.pkgs;
-              [ black coverage flake8 isort mypy twine virtualenv ]
-              ++ flask-profiler.optional-dependencies.mongodb
-              ++ flask-profiler.optional-dependencies.sqlalchemy;
+            packages = with pkgs.python3.pkgs; [
+              black
+              coverage
+              flake8
+              isort
+              mypy
+              twine
+              virtualenv
+            ];
             inputsFrom = [ pkgs.python3.pkgs.flask-profiler ];
           };
           checks = {
