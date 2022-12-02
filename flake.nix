@@ -44,6 +44,11 @@
               ${pkgs.python3.pkgs.flake8}/bin/flake8
               mkdir $out
             '';
+            mypy-check = pkgs.runCommand "flake8-check" { } ''
+              cd ${self}
+              ${pkgs.python3.pkgs.mypy}/bin/mypy
+              mkdir $out
+            '';
           };
         });
       supportedSystems = flake-utils.lib.defaultSystems;
