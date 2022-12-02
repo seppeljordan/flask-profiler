@@ -49,7 +49,7 @@ class Configuration:
 
     @property
     def basic_auth_password(self) -> str:
-        return self.read_config()["basicAuth"]["passwordb"]
+        return self.read_config()["basicAuth"]["password"]
 
     @property
     def collection(self) -> BaseStorage:
