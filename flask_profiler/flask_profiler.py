@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 import functools
 import logging
@@ -13,9 +14,12 @@ from flask_httpauth import HTTPBasicAuth
 
 from .configuration import Configuration
 from .controllers.filter_controller import FilterController
+from .controllers.get_timeseries_controller import GetTimeseriesController
 from .presenters.filtered_presenter import FilteredPresenter
+from .presenters.get_timeseries_presenter import GetTimeseriesPresenter
 from .presenters.summary_presenter import SummaryPresenter
 from .storage.base import Measurement, RequestMetadata
+from .use_cases.get_timeseries_use_case import GetTimeseriesUseCase
 
 ResponseT = Union[str, FlaskResponse]
 logger = logging.getLogger("flask-profiler")
@@ -84,20 +88,13 @@ def getMeasurementsSummary() -> ResponseT:
 @auth.login_required
 def getRequestsTimeseries() -> ResponseT:
     injector = DependencyInjector()
-    clock = injector.get_clock()
-    config = injector.get_configuration()
-    args = dict(request.args.items())
-    return jsonify(
-        {
-            "series": config.collection.get_timeseries(
-                started_at=float(
-                    args.get("startedAt", clock.get_epoch() - 3600 * 24 * 7)
-                ),
-                ended_at=float(args.get("endedAt", clock.get_epoch())),
-                interval=args.get("interval", "hourly"),
-            )
-        }
-    )
+    controller = injector.get_timeseries_controller()
+    use_case = injector.get_timeseries_use_case()
+    presenter = injector.get_timeseries_presenter()
+    use_case_request = controller.parse_request(request)
+    use_case_response = use_case.get_timeseries(use_case_request)
+    view_model = presenter.present_timeseries_as_json_response(use_case_response)
+    return jsonify(view_model.json_object)
 
 
 @flask_profiler.route("/api/measurements/methodDistribution/")
@@ -241,11 +238,6 @@ def sanatize_kwargs(kwargs: Dict[str, Any]) -> Dict[str, str]:
     return kwargs
 
 
-class SystemClock:
-    def get_epoch(self) -> float:
-        return time.time()
-
-
 class DependencyInjector:
     def __init__(self, *, app: Optional[Flask] = None) -> None:
         self.app = app or current_app
@@ -264,3 +256,19 @@ class DependencyInjector:
 
     def get_filtered_presenter(self) -> FilteredPresenter:
         return FilteredPresenter()
+
+    def get_timeseries_use_case(self) -> GetTimeseriesUseCase:
+        return GetTimeseriesUseCase(
+            storage=self.get_configuration().collection,
+        )
+
+    def get_timeseries_presenter(self) -> GetTimeseriesPresenter:
+        return GetTimeseriesPresenter()
+
+    def get_timeseries_controller(self) -> GetTimeseriesController:
+        return GetTimeseriesController(clock=self.get_clock())
+
+
+class SystemClock:
+    def get_epoch(self) -> float:
+        return time.time()

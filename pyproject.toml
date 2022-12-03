@@ -39,7 +39,8 @@ packages = [
     "flask_profiler",
     "flask_profiler.storage",
     "flask_profiler.controllers",
-    "flask_profiler.presenters"
+    "flask_profiler.presenters",
+    "flask_profiler.use_cases",
 ]
 
 [tool.setuptools.package-data]

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
 
+from flask_profiler.clock import Clock
 from flask_profiler.storage.base import FilterQuery
 
 
@@ -43,8 +43,3 @@ class FilterController:
             kwargs=kwargs,
         )
         return query
-
-
-class Clock(Protocol):
-    def get_epoch(self) -> float:
-        ...

@@ -1,14 +1,9 @@
 import json
 import sqlite3
 import threading
-from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from .base import FilterQuery, Measurement, Record, RequestMetadata, Summary
-
-
-def formatDate(timestamp, dateFormat):
-    return datetime.fromtimestamp(timestamp).strftime(dateFormat)
 
 
 class Sqlite:
@@ -100,7 +95,7 @@ class Sqlite:
 
     def get_timeseries(
         self, started_at: float, ended_at: float, interval: str
-    ) -> Dict[Tuple[datetime, str], int]:
+    ) -> Dict[float, int]:
         if interval == "daily":
             interval_seconds = 3600 * 24  # daily
             dateFormat = "%Y-%m-%d"
@@ -122,9 +117,9 @@ class Sqlite:
             rows = self.cursor.fetchall()
         series = {}
         for i in range(int(started_at), int(ended_at) + 1, interval_seconds):
-            series[formatDate(i, dateFormat)] = 0
+            series[float(i)] = 0
         for row in rows:
-            series[formatDate(row[0], dateFormat)] = row[1]
+            series[row[0]] = row[1]
         return series
 
     def get_method_distribution(
