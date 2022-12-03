@@ -52,7 +52,7 @@ def index() -> ResponseT:
 
 @flask_profiler.route("/api/measurements/")
 @auth.login_required
-def filterMeasurements() -> ResponseT:
+def filtered_measurements() -> ResponseT:
     injector = DependencyInjector()
     controller = injector.get_filter_controller()
     presenter = injector.get_filtered_presenter()
@@ -66,7 +66,7 @@ def filterMeasurements() -> ResponseT:
 
 @flask_profiler.route("/api/measurements/grouped")
 @auth.login_required
-def getMeasurementsSummary() -> ResponseT:
+def grouped_measurements() -> ResponseT:
     injector = DependencyInjector()
     controller = injector.get_filter_controller()
     presenter = injector.get_summary_presenter()
@@ -80,7 +80,7 @@ def getMeasurementsSummary() -> ResponseT:
 
 @flask_profiler.route("/api/measurements/timeseries/")
 @auth.login_required
-def getRequestsTimeseries() -> ResponseT:
+def request_timeseries() -> ResponseT:
     injector = DependencyInjector()
     view = injector.get_requests_timeseries_view()
     return view.handle_request(request)
@@ -88,7 +88,7 @@ def getRequestsTimeseries() -> ResponseT:
 
 @flask_profiler.route("/api/measurements/methodDistribution/")
 @auth.login_required
-def getMethodDistribution() -> ResponseT:
+def method_distribution() -> ResponseT:
     injector = DependencyInjector()
     clock = injector.get_clock()
     config = injector.get_configuration()
@@ -107,7 +107,7 @@ def getMethodDistribution() -> ResponseT:
 
 @flask_profiler.route("/db/deleteDatabase")
 @auth.login_required
-def deleteDatabase() -> ResponseT:
+def delete_database() -> ResponseT:
     injector = DependencyInjector()
     config = injector.get_configuration()
     response = jsonify({"status": config.collection.truncate()})
