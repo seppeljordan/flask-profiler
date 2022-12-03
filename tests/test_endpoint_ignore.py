@@ -3,7 +3,9 @@ import unittest
 
 from flask_testing import TestCase as FlaskTestCase
 
-from flask_profiler.flask_profiler import Configuration, DependencyInjector, is_ignored
+from flask_profiler.configuration import Configuration
+from flask_profiler.dependency_injector import DependencyInjector
+from flask_profiler.flask_profiler import is_ignored
 
 from .basetest import BasetTest
 

@@ -106,8 +106,8 @@ class Sqlite:
             sql = """SELECT startedAt, count(id) as count
                 FROM "{table_name}"
                 WHERE endedAt<=:endedAt AND startedAt>=:startedAt
-                group by strftime(:dateFormat, datetime(startedAt, 'unixepoch'))
-                order by startedAt asc
+                GROUP BY strftime(:dateFormat, datetime(startedAt, 'unixepoch'))
+                ORDER BY startedAt asc
                 """.format(
                 table_name=self.table_name
             )

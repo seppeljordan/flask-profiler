@@ -4,7 +4,8 @@ from uuid import uuid4
 
 from flask_testing import TestCase as FlaskTestCase
 
-from flask_profiler.flask_profiler import Configuration, DependencyInjector
+from flask_profiler.configuration import Configuration
+from flask_profiler.dependency_injector import DependencyInjector
 
 from .basetest import BaseTest2, BasetTest
 
