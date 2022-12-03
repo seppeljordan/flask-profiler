@@ -209,15 +209,11 @@ class Sqlite:
     def get_summary(self, criteria: FilterQuery) -> List[Summary]:
         conditions = "WHERE 1=1 and "
         if criteria.startedAt:
-            conditions = conditions + "startedAt>={0} AND ".format(
-                criteria.startedAt.timestamp()
-            )
+            conditions = conditions + "startedAt>= :started_at AND "
         if criteria.endedAt:
-            conditions = conditions + "endedAt<={0} AND ".format(
-                criteria.endedAt.timestamp()
-            )
+            conditions = conditions + "endedAt <= :ended_at AND "
         if criteria.elapsed:
-            conditions = conditions + "elapsed>={0} AND".format(criteria.elapsed)
+            conditions = conditions + "elapsed>= :elapsed AND"
         conditions = conditions.rstrip(" AND")
         with self.lock:
             sql = """SELECT
@@ -235,7 +231,14 @@ class Sqlite:
                 sort_field=criteria.sort[0],
                 sort_direction=criteria.sort[1],
             )
-            self.cursor.execute(sql)
+            self.cursor.execute(
+                sql,
+                dict(
+                    elapsed=criteria.elapsed,
+                    ended_at=criteria.endedAt,
+                    started_at=criteria.startedAt,
+                ),
+            )
             return [
                 Summary(
                     method=row[0],

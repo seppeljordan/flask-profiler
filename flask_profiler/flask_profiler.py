@@ -4,7 +4,6 @@ from __future__ import annotations
 import functools
 import logging
 import re
-import time
 from typing import Any, Callable, Dict, Iterable, List, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
@@ -40,7 +39,7 @@ def verify_password(username, password):
         and password == config.basic_auth_password
     ):
         return True
-    logging.warning("flask-profiler authentication failed")
+    logging.info("flask-profiler authentication failed")
     return False
 
 
@@ -131,6 +130,7 @@ def is_ignored(name: str) -> bool:
 
 def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route:
     injector = DependencyInjector()
+    clock = injector.get_clock()
     config = injector.get_configuration()
     logger.debug("{0} is being processed.")
     if is_ignored(name):
@@ -141,11 +141,11 @@ def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route
     def wrapper(*args, **kwargs) -> ResponseT:
         if not config.sampling_function():
             return f(*args, **kwargs)
-        started_at = time.time()
+        started_at = clock.get_epoch()
         try:
-            returnVal = f(*args, **kwargs)
+            response = f(*args, **kwargs)
         finally:
-            stopped_at = time.time()
+            stopped_at = clock.get_epoch()
             measurement = Measurement(
                 method=method,
                 context=context,
@@ -157,7 +157,7 @@ def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route
             )
             logger.debug(str(measurement.serialize_to_json()))
             config.collection.insert(measurement)
-        return returnVal
+        return response
 
     return cast(Route, wrapper)
 
