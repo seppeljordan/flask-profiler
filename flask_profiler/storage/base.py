@@ -20,7 +20,7 @@ class BaseStorage(Protocol):
 
     def get_timeseries(
         self, started_at: float, ended_at: float, interval: str
-    ) -> Dict[Tuple[datetime, str], int]:
+    ) -> Dict[float, int]:
         ...
 
     def get_method_distribution(
