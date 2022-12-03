@@ -5,7 +5,7 @@ from copy import copy
 from flask import Flask
 
 from flask_profiler import flask_profiler
-from flask_profiler.flask_profiler import Configuration
+from flask_profiler.configuration import Configuration
 
 CONF = {
     "enabled": True,

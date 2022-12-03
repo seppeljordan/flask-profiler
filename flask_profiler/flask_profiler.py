@@ -5,21 +5,15 @@ import functools
 import logging
 import re
 import time
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
 from flask import Response as FlaskResponse
-from flask import current_app, jsonify, request
+from flask import jsonify, request
 from flask_httpauth import HTTPBasicAuth
 
-from .configuration import Configuration
-from .controllers.filter_controller import FilterController
-from .controllers.get_timeseries_controller import GetTimeseriesController
-from .presenters.filtered_presenter import FilteredPresenter
-from .presenters.get_timeseries_presenter import GetTimeseriesPresenter
-from .presenters.summary_presenter import SummaryPresenter
+from .dependency_injector import DependencyInjector
 from .storage.base import Measurement, RequestMetadata
-from .use_cases.get_timeseries_use_case import GetTimeseriesUseCase
 
 ResponseT = Union[str, FlaskResponse]
 logger = logging.getLogger("flask-profiler")
@@ -88,13 +82,8 @@ def getMeasurementsSummary() -> ResponseT:
 @auth.login_required
 def getRequestsTimeseries() -> ResponseT:
     injector = DependencyInjector()
-    controller = injector.get_timeseries_controller()
-    use_case = injector.get_timeseries_use_case()
-    presenter = injector.get_timeseries_presenter()
-    use_case_request = controller.parse_request(request)
-    use_case_response = use_case.get_timeseries(use_case_request)
-    view_model = presenter.present_timeseries_as_json_response(use_case_response)
-    return jsonify(view_model.json_object)
+    view = injector.get_requests_timeseries_view()
+    return view.handle_request(request)
 
 
 @flask_profiler.route("/api/measurements/methodDistribution/")
@@ -161,7 +150,7 @@ def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route
                 method=method,
                 context=context,
                 name=name,
-                args=list(map(str, args)),
+                args=sanatize_args(args),
                 kwargs=sanatize_kwargs(kwargs),
                 startedAt=started_at,
                 endedAt=stopped_at,
@@ -173,7 +162,7 @@ def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route
     return cast(Route, wrapper)
 
 
-def wrapHttpEndpoint(f):
+def wrap_route(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         context = RequestMetadata(
@@ -191,7 +180,7 @@ def wrapHttpEndpoint(f):
     return wrapper
 
 
-def wrapAppEndpoints(app):
+def wrap_all_routes(app):
     """
     wraps all endpoints defined in the given flask app to measure how long time
     each endpoints takes while being executed. This wrapping process is
@@ -200,16 +189,16 @@ def wrapAppEndpoints(app):
     :return:
     """
     for endpoint, func in app.view_functions.items():
-        app.view_functions[endpoint] = wrapHttpEndpoint(func)
+        app.view_functions[endpoint] = wrap_route(func)
 
 
-def profile(*args, **kwargs):
+def profile():
     """
     http endpoint decorator
     """
 
     def wrapper(f):
-        return wrapHttpEndpoint(f)
+        return wrap_route(f)
 
     return wrapper
 
@@ -226,49 +215,18 @@ def init_app(app: Flask) -> None:
     config = injector.get_configuration()
     if not config.enabled:
         return
-    wrapAppEndpoints(app)
+    wrap_all_routes(app)
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:
         logging.warning(" * CAUTION: flask-profiler is working without basic auth!")
 
 
+def sanatize_args(args: Iterable[Any]) -> List[str]:
+    return [str(item) for item in args]
+
+
 def sanatize_kwargs(kwargs: Dict[str, Any]) -> Dict[str, str]:
+
     for key, value in list(kwargs.items()):
         kwargs[key] = str(value)
     return kwargs
-
-
-class DependencyInjector:
-    def __init__(self, *, app: Optional[Flask] = None) -> None:
-        self.app = app or current_app
-
-    def get_clock(self) -> SystemClock:
-        return SystemClock()
-
-    def get_filter_controller(self) -> FilterController:
-        return FilterController(clock=self.get_clock())
-
-    def get_configuration(self) -> Configuration:
-        return Configuration(self.app)
-
-    def get_summary_presenter(self) -> SummaryPresenter:
-        return SummaryPresenter()
-
-    def get_filtered_presenter(self) -> FilteredPresenter:
-        return FilteredPresenter()
-
-    def get_timeseries_use_case(self) -> GetTimeseriesUseCase:
-        return GetTimeseriesUseCase(
-            storage=self.get_configuration().collection,
-        )
-
-    def get_timeseries_presenter(self) -> GetTimeseriesPresenter:
-        return GetTimeseriesPresenter()
-
-    def get_timeseries_controller(self) -> GetTimeseriesController:
-        return GetTimeseriesController(clock=self.get_clock())
-
-
-class SystemClock:
-    def get_epoch(self) -> float:
-        return time.time()

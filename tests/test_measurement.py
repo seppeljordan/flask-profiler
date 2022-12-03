@@ -3,7 +3,9 @@ import time
 
 from flask_testing import TestCase
 
-from flask_profiler.flask_profiler import Configuration, DependencyInjector, measure
+from flask_profiler.configuration import Configuration
+from flask_profiler.dependency_injector import DependencyInjector
+from flask_profiler.flask_profiler import measure
 from flask_profiler.storage.base import RequestMetadata
 
 from .basetest import BasetTest
