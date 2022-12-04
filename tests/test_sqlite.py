@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from unittest import TestCase
 
@@ -48,8 +49,34 @@ class SqliteTests(TestCase):
         )
         assert measurements[0].context == expected_request_metadata
 
+    def test_can_get_summary_for_measurements_in_specified_timeframe(self) -> None:
+        started_at = datetime(2000, 1, 1)
+        ended_at = datetime(2000, 1, 2)
+        measurement_start = datetime(2000, 1, 1, hour=12)
+        measurement_end = datetime(2000, 1, 1, hour=13)
+        self.db.insert(
+            self.create_measurement(
+                start_time=measurement_start,
+                end_time=measurement_end,
+            )
+        )
+        result = self.db.get_summary(
+            FilterQuery(
+                limit=10,
+                skip=0,
+                startedAt=started_at,
+                endedAt=ended_at,
+                sort=("name", "desc"),
+            )
+        )
+        assert result
+
     def create_measurement(
-        self, name: str = "name", request_metadata: Optional[RequestMetadata] = None
+        self,
+        name: str = "name",
+        request_metadata: Optional[RequestMetadata] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
     ) -> Measurement:
         return Measurement(
             name=name,
@@ -57,8 +84,8 @@ class SqliteTests(TestCase):
             kwargs={},
             method="GET",
             context=request_metadata or self.create_request_metadata(),
-            startedAt=1.0,
-            endedAt=2.0,
+            startedAt=1.0 if start_time is None else start_time.timestamp(),
+            endedAt=2.0 if end_time is None else end_time.timestamp(),
         )
 
     def create_request_metadata(self) -> RequestMetadata:
