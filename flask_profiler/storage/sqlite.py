@@ -10,14 +10,6 @@ class Sqlite:
     def __init__(self, sqlite_file: str, table_name: str) -> None:
         self.sqlite_file = sqlite_file
         self.table_name = table_name
-        self.startedAt_head = "startedAt"  # name of the column
-        self.endedAt_head = "endedAt"  # name of the column
-        self.elapsed_head = "elapsed"  # name of the column
-        self.method_head = "method"
-        self.args_head = "args"
-        self.kwargs_head = "kwargs"
-        self.name_head = "name"
-        self.context_head = "context"
 
         self.connection = sqlite3.connect(self.sqlite_file, check_same_thread=False)
         self.cursor = self.connection.cursor()
@@ -31,40 +23,27 @@ class Sqlite:
 
     def create_database(self) -> None:
         with self.lock:
-            sql = """CREATE TABLE {table_name}
-                (
-                ID Integer PRIMARY KEY AUTOINCREMENT,
-                {startedAt} REAL,
-                {endedAt} REAL,
-                {elapsed} REAL,
-                {args} TEXT,
-                {kwargs} TEXT,
-                {method} TEXT,
-                {context} TEXT,
-                {name} TEXT
+            sql = """
+                CREATE TABLE {table_name} (
+                    ID Integer PRIMARY KEY AUTOINCREMENT,
+                    startedAt REAL,
+                    endedAt REAL,
+                    elapsed REAL,
+                    args TEXT,
+                    kwargs TEXT,
+                    method TEXT,
+                    context TEXT,
+                    name TEXT
                 );
             """.format(
                 table_name=self.table_name,
-                startedAt=self.startedAt_head,
-                endedAt=self.endedAt_head,
-                elapsed=self.elapsed_head,
-                args=self.args_head,
-                kwargs=self.kwargs_head,
-                method=self.method_head,
-                context=self.context_head,
-                name=self.name_head,
             )
             self.cursor.execute(sql)
 
             sql = """
             CREATE INDEX measurement_index ON {table_name}
-                ({startedAt}, {endedAt}, {elapsed}, {name}, {method});
+                (startedAt, endedAt, elapsed, name, method);
             """.format(
-                startedAt=self.startedAt_head,
-                endedAt=self.endedAt_head,
-                elapsed=self.elapsed_head,
-                name=self.name_head,
-                method=self.method_head,
                 table_name=self.table_name,
             )
             self.cursor.execute(sql)
@@ -165,7 +144,6 @@ class Sqlite:
                 sort_field=criteria.sort[0],
                 sort_direction=criteria.sort[1],
             )
-
             self.cursor.execute(
                 sql,
                 dict(
@@ -207,13 +185,13 @@ class Sqlite:
         )
 
     def get_summary(self, criteria: FilterQuery) -> List[Summary]:
-        conditions = "WHERE 1=1 and "
+        conditions = "WHERE 1=1 AND"
         if criteria.startedAt:
-            conditions = conditions + "startedAt>= :started_at AND "
+            conditions = conditions + " startedAt >= :started_at AND"
         if criteria.endedAt:
-            conditions = conditions + "endedAt <= :ended_at AND "
-        if criteria.elapsed:
-            conditions = conditions + "elapsed>= :elapsed AND"
+            conditions = conditions + " endedAt <= :ended_at AND"
+        if criteria.elapsed is not None:
+            conditions = conditions + " elapsed >= :elapsed AND"
         conditions = conditions.rstrip(" AND")
         with self.lock:
             sql = """SELECT
@@ -235,10 +213,13 @@ class Sqlite:
                 sql,
                 dict(
                     elapsed=criteria.elapsed,
-                    ended_at=criteria.endedAt,
-                    started_at=criteria.startedAt,
+                    ended_at=criteria.endedAt.timestamp() if criteria.endedAt else None,
+                    started_at=criteria.startedAt.timestamp()
+                    if criteria.startedAt
+                    else None,
                 ),
             )
+            rows = self.cursor.fetchall()
             return [
                 Summary(
                     method=row[0],
@@ -248,5 +229,5 @@ class Sqlite:
                     max_elapsed=row[4],
                     avg_elapsed=row[5],
                 )
-                for row in self.cursor.fetchall()
+                for row in rows
             ]
