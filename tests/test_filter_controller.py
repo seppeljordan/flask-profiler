@@ -1,10 +1,15 @@
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 from unittest import TestCase
 
 from flask_profiler.controllers.filter_controller import FilterController
 from tests.request import FakeJsonRequest
+
+# This sentinel object is used in default arguments. We don't use None
+# since in many cases None would be a valid value that needs to be
+# distinguished from not specifying a value.
+SENTINEL = object()
 
 
 class ParseFilterTests(TestCase):
@@ -52,8 +57,31 @@ class ParseFilterTests(TestCase):
         result = self.controller.parse_filter(self.create_request())
         assert result.kwargs is None
 
-    def create_request(self) -> FakeJsonRequest:
-        return FakeJsonRequest()
+    def test_with_json_value_for_limit_equal_5_the_limit_is_set_to_5(self) -> None:
+        result = self.controller.parse_filter(self.create_request(limit=5))
+        assert result.limit == 5
+
+    def test_with_json_value_for_sort_column_equal_to_name_the_query_is_sorted_by_name(
+        self,
+    ) -> None:
+        result = self.controller.parse_filter(self.create_request(sort_column="name"))
+        assert result.sort[0] == "name"
+
+    def test_with_json_value_for_sort_column_equal_to_xyz_the_query_is_sorted_by_endedAt(
+        self,
+    ) -> None:
+        result = self.controller.parse_filter(self.create_request(sort_column="xyz"))
+        assert result.sort[0] == "endedAt"
+
+    def create_request(
+        self, limit: Any = SENTINEL, sort_column: Any = SENTINEL
+    ) -> FakeJsonRequest:
+        data: Dict[str, Any] = dict()
+        if limit is not SENTINEL:
+            data["limit"] = limit
+        if sort_column is not SENTINEL:
+            data["sort_column"] = sort_column
+        return FakeJsonRequest(data)
 
 
 class FakeClock:
