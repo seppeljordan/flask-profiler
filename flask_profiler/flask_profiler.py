@@ -12,6 +12,7 @@ from flask import jsonify, render_template, request, url_for
 from flask_httpauth import HTTPBasicAuth
 
 from .dependency_injector import DependencyInjector
+from .request import WrappedRequest
 from .storage.base import Measurement, RequestMetadata
 
 ResponseT = Union[str, FlaskResponse]
@@ -73,8 +74,7 @@ def filtered_measurements() -> ResponseT:
     controller = injector.get_filter_controller()
     presenter = injector.get_filtered_presenter()
     config = injector.get_configuration()
-    args = dict(request.args.items())
-    query = controller.parse_filter(args)
+    query = controller.parse_filter(WrappedRequest(request))
     measurements = config.collection.filter(query)
     view_model = presenter.present_filtered_measurements(measurements)
     return jsonify(view_model)
@@ -85,7 +85,7 @@ def filtered_measurements() -> ResponseT:
 def grouped_measurements() -> ResponseT:
     injector = DependencyInjector()
     view = injector.get_summary_data_view()
-    return view.handle_request(request)
+    return view.handle_request(WrappedRequest(request))
 
 
 @flask_profiler.route("/api/measurements/timeseries/")

@@ -3,9 +3,8 @@ from datetime import datetime
 from typing import Optional
 from unittest import TestCase
 
-from flask import Request
-
 from flask_profiler.controllers.filter_controller import FilterController
+from tests.request import FakeJsonRequest
 
 
 class ParseFilterTests(TestCase):
@@ -53,8 +52,8 @@ class ParseFilterTests(TestCase):
         result = self.controller.parse_filter(self.create_request())
         assert result.kwargs is None
 
-    def create_request(self) -> Request:
-        return Request(environ=dict())
+    def create_request(self) -> FakeJsonRequest:
+        return FakeJsonRequest()
 
 
 class FakeClock:

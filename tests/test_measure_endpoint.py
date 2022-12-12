@@ -2,11 +2,11 @@
 import unittest
 from uuid import uuid4
 
-from flask import Request
 from flask_testing import TestCase as FlaskTestCase
 
 from flask_profiler.configuration import Configuration
 from flask_profiler.dependency_injector import DependencyInjector
+from tests.request import FakeJsonRequest
 
 from .basetest import BaseTest2, BasetTest
 
@@ -97,8 +97,8 @@ class EndpointMeasurementTest2(BaseTest2, FlaskTestCase):
         self.assertEqual(measurement.kwargs["id"], str(expected_uuid))
 
 
-def create_request() -> Request:
-    return Request(environ=dict())
+def create_request() -> FakeJsonRequest:
+    return FakeJsonRequest()
 
 
 if __name__ == "__main__":

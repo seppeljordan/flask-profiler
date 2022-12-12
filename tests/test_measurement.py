@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import time
 
-from flask import Request
 from flask_testing import TestCase
 
 from flask_profiler.configuration import Configuration
 from flask_profiler.dependency_injector import DependencyInjector
 from flask_profiler.flask_profiler import measure
 from flask_profiler.storage.base import RequestMetadata
+from tests.request import FakeJsonRequest
 
 from .basetest import BasetTest
 
@@ -63,8 +63,8 @@ class MeasurementTest(BasetTest, TestCase):
         self.assertEqual(m.context, expected_context)
         self.assertTrue(m.elapsed >= waitSeconds)
 
-    def create_request(self) -> Request:
-        return Request(environ=dict())
+    def create_request(self) -> FakeJsonRequest:
+        return FakeJsonRequest()
 
     def create_context(self) -> RequestMetadata:
         return RequestMetadata(

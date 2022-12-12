@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from flask import Request
 from flask_testing import TestCase as FlaskTestCase
 
 from flask_profiler.configuration import Configuration
 from flask_profiler.dependency_injector import DependencyInjector
 from flask_profiler.flask_profiler import is_ignored
+from tests.request import FakeJsonRequest
 
 from .basetest import BasetTest
 
@@ -67,8 +67,8 @@ class EndpointIgnoreTestCase(BasetTest, FlaskTestCase):
         )
         self.assertEqual(len(measurements), 2)
 
-    def create_request(self) -> Request:
-        return Request(environ=dict())
+    def create_request(self) -> FakeJsonRequest:
+        return FakeJsonRequest()
 
 
 if __name__ == "__main__":

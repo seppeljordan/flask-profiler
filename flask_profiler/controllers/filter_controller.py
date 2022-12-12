@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from flask import Request
-
 from flask_profiler.clock import Clock
+from flask_profiler.request import HttpRequest
 from flask_profiler.storage.base import FilterQuery
 
 
@@ -13,34 +12,19 @@ from flask_profiler.storage.base import FilterQuery
 class FilterController:
     clock: Clock
 
-    def parse_filter(self, request: Request) -> FilterQuery:
-        arguments = dict(request.args.items())
-        limit = int(arguments.get("limit", 100))
-        skip = int(arguments.get("skip", 0))
-        sort = tuple(str(arguments.get("sort", "endedAt,desc")).split(","))
-        sort = (
-            sort[0],
-            sort[1],
-        )
-        startedAt = datetime.fromtimestamp(
-            float(arguments.get("startedAt", self.clock.get_epoch() - 3600 * 24 * 7))
-        )
-        endedAt = datetime.fromtimestamp(
-            float(arguments.get("endedAt", self.clock.get_epoch()))
-        )
-        name = arguments.get("name", None)
-        method = arguments.get("method", None)
-        args = arguments.get("args", None)
-        kwargs = arguments.get("kwargs", None)
+    def parse_filter(self, request: HttpRequest) -> FilterQuery:
+        received_json = request.get_content_as_json()
+        startedAt = datetime.fromtimestamp(self.clock.get_epoch() - 3600 * 24 * 7)
+        endedAt = datetime.fromtimestamp(self.clock.get_epoch())
         query = FilterQuery(
-            limit=limit,
-            skip=skip,
-            sort=sort,
+            limit=100,
+            skip=0,
+            sort=("endedAt", "desc"),
             startedAt=startedAt,
             endedAt=endedAt,
-            name=name,
-            method=method,
-            args=args,
-            kwargs=kwargs,
+            name=None,
+            method=None,
+            args=None,
+            kwargs=None,
         )
         return query
