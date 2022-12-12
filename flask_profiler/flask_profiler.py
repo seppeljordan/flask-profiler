@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Iterable, List, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
 from flask import Response as FlaskResponse
-from flask import jsonify, request
+from flask import jsonify, render_template, request, url_for
 from flask_httpauth import HTTPBasicAuth
 
 from .dependency_injector import DependencyInjector
@@ -23,8 +23,9 @@ Route = TypeVar("Route", bound=Callable[..., ResponseT])
 flask_profiler = Blueprint(
     "flask_profiler",
     __name__,
-    static_folder="static/dist/",
-    static_url_path="/static/dist",
+    static_folder="static/",
+    static_url_path="/static",
+    template_folder="templates",
 )
 
 
@@ -46,7 +47,23 @@ def verify_password(username, password):
 @flask_profiler.route("/")
 @auth.login_required
 def index() -> ResponseT:
-    return flask_profiler.send_static_file("index.html")
+    return render_template(
+        "summary.html",
+        **dict(
+            grouped_measurements_url=url_for("flask_profiler.grouped_measurements"),
+        ),
+    )
+
+
+@flask_profiler.route("/details/")
+@auth.login_required
+def details() -> ResponseT:
+    return render_template(
+        "details.html",
+        **dict(
+            filtered_measurements_url=url_for("flask_profiler.filtered_measurements"),
+        ),
+    )
 
 
 @flask_profiler.route("/api/measurements/")
@@ -63,7 +80,7 @@ def filtered_measurements() -> ResponseT:
     return jsonify(view_model)
 
 
-@flask_profiler.route("/api/measurements/grouped")
+@flask_profiler.route("/api/measurements/grouped/")
 @auth.login_required
 def grouped_measurements() -> ResponseT:
     injector = DependencyInjector()
