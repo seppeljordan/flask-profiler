@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 
+from flask import Request
 from flask_testing import TestCase
 
 from flask_profiler.configuration import Configuration
@@ -33,7 +34,11 @@ class MeasurementTest(BasetTest, TestCase):
         wrapped = measure(doWait, "doWait", "call", context=self.create_context())
         waitSeconds = 2
         wrapped(waitSeconds)
-        m = list(config.collection.filter(self.controller.parse_filter()))[0]
+        m = list(
+            config.collection.filter(
+                self.controller.parse_filter(self.create_request())
+            )
+        )[0]
         self.assertEqual(m.name, "doWait")
         self.assertEqual(float(m.elapsed) >= waitSeconds, True)
 
@@ -46,13 +51,20 @@ class MeasurementTest(BasetTest, TestCase):
         waitSeconds = 1
         kwargs = {"k1": "kval1", "k2": "kval2"}
         wrapped(waitSeconds, **kwargs)
-        m = list(config.collection.filter(self.controller.parse_filter()))[0]
+        m = list(
+            config.collection.filter(
+                self.controller.parse_filter(self.create_request())
+            )
+        )[0]
         self.assertEqual(m.name, name)
         self.assertEqual(m.method, method)
         self.assertEqual(m.args[0], str(waitSeconds))
         self.assertEqual(m.kwargs, kwargs)
         self.assertEqual(m.context, expected_context)
         self.assertTrue(m.elapsed >= waitSeconds)
+
+    def create_request(self) -> Request:
+        return Request(environ=dict())
 
     def create_context(self) -> RequestMetadata:
         return RequestMetadata(

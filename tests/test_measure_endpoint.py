@@ -2,6 +2,7 @@
 import unittest
 from uuid import uuid4
 
+from flask import Request
 from flask_testing import TestCase as FlaskTestCase
 
 from flask_profiler.configuration import Configuration
@@ -28,7 +29,9 @@ class EndpointMeasurementTest(BasetTest, FlaskTestCase):
         r = response.data.decode("utf-8", "strict")
 
         self.assertEqual(r, "without profiler")
-        measurements = list(config.collection.filter(self.controller.parse_filter()))
+        measurements = list(
+            config.collection.filter(self.controller.parse_filter(create_request()))
+        )
         self.assertEqual(len(measurements), 0)
 
     def test_02_with_profiler(self) -> None:
@@ -37,7 +40,9 @@ class EndpointMeasurementTest(BasetTest, FlaskTestCase):
         r = response.data.decode("utf-8", "strict")
         self.assertEqual(r, "with profiler")
 
-        measurements = list(config.collection.filter(self.controller.parse_filter()))
+        measurements = list(
+            config.collection.filter(self.controller.parse_filter(create_request()))
+        )
         self.assertEqual(len(measurements), 1)
         m = measurements[0]
         self.assertEqual(m.name, "/api/with/profiler/<message>")
@@ -56,7 +61,9 @@ class EndpointMeasurementTest2(BaseTest2, FlaskTestCase):
         config = Configuration(self.app)
         name = "foo"
         response = self.client.get("/api/people/{}".format(name))
-        measurements = list(config.collection.filter(self.controller.parse_filter()))
+        measurements = list(
+            config.collection.filter(self.controller.parse_filter(create_request()))
+        )
         self.assertEqual(len(measurements), 1)
         r = response.data.decode("utf-8", "strict")
         self.assertEqual(r, name)
@@ -66,7 +73,9 @@ class EndpointMeasurementTest2(BaseTest2, FlaskTestCase):
         self.client.get("/api/people/foo")
         self.client.get("/api/people/foo")
         self.client.get("/api/with/profiler/hello?q=2")
-        measurements = list(config.collection.filter(self.controller.parse_filter()))
+        measurements = list(
+            config.collection.filter(self.controller.parse_filter(create_request()))
+        )
         self.assertEqual(len(measurements), 3)
         test_flag = False
         for list_element in measurements:
@@ -82,8 +91,14 @@ class EndpointMeasurementTest2(BaseTest2, FlaskTestCase):
         config = Configuration(self.app)
         expected_uuid = uuid4()
         self.client.get(f"/api/people/by-id/{expected_uuid}")
-        measurement = list(config.collection.filter(self.controller.parse_filter()))[0]
+        measurement = list(
+            config.collection.filter(self.controller.parse_filter(create_request()))
+        )[0]
         self.assertEqual(measurement.kwargs["id"], str(expected_uuid))
+
+
+def create_request() -> Request:
+    return Request(environ=dict())
 
 
 if __name__ == "__main__":

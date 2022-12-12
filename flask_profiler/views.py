@@ -32,8 +32,7 @@ class GetSummaryDataView:
     configuration: Configuration
 
     def handle_request(self, request: Request) -> Response:
-        args = dict(request.args.items())
-        query = self.controller.parse_filter(args)
+        query = self.controller.parse_filter(request)
         measurements = self.configuration.collection.get_summary(query)
         view_model = self.presenter.present_summaries(measurements)
         return jsonify(view_model)

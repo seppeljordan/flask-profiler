@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from flask import Request
+
 from flask_profiler.clock import Clock
 from flask_profiler.storage.base import FilterQuery
 
@@ -11,9 +13,8 @@ from flask_profiler.storage.base import FilterQuery
 class FilterController:
     clock: Clock
 
-    def parse_filter(self, arguments=None) -> FilterQuery:
-        if arguments is None:
-            arguments = dict()
+    def parse_filter(self, request: Request) -> FilterQuery:
+        arguments = dict(request.args.items())
         limit = int(arguments.get("limit", 100))
         skip = int(arguments.get("skip", 0))
         sort = tuple(str(arguments.get("sort", "endedAt,desc")).split(","))

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
+from flask import Request
 from flask_testing import TestCase as FlaskTestCase
 
 from flask_profiler.configuration import Configuration
@@ -48,15 +49,26 @@ class EndpointIgnoreTestCase(BasetTest, FlaskTestCase):
         for s in ignored_routes:
             self.client.get(s)
 
-        measurements = list(config.collection.filter(self.controller.parse_filter()))
+        measurements = list(
+            config.collection.filter(
+                self.controller.parse_filter(self.create_request())
+            )
+        )
         assert not measurements
 
         not_ignored_routes = ["/api/settings/personal/name/", "/api/static/"]
         for s in not_ignored_routes:
             print(self.client.get(s))
 
-        measurements = list(config.collection.filter(self.controller.parse_filter()))
+        measurements = list(
+            config.collection.filter(
+                self.controller.parse_filter(self.create_request())
+            )
+        )
         self.assertEqual(len(measurements), 2)
+
+    def create_request(self) -> Request:
+        return Request(environ=dict())
 
 
 if __name__ == "__main__":
