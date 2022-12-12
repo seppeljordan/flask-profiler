@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Protocol, Tuple
@@ -27,6 +28,30 @@ class BaseStorage(Protocol):
         self, started_at: float, ended_at: float
     ) -> Dict[str, int]:
         ...
+
+
+@enum.unique
+class RecordSortColumn(enum.Enum):
+    method = enum.auto()
+    route_name = enum.auto()
+    started_at = enum.auto()
+    elapsed = enum.auto()
+
+
+@enum.unique
+class SummarySortColumn(enum.Enum):
+    method = enum.auto()
+    route_name = enum.auto()
+    count = enum.auto()
+    average_elapsed = enum.auto()
+    min_elapsed = enum.auto()
+    max_elapsed = enum.auto()
+
+
+@enum.unique
+class SortDirection(enum.Enum):
+    ascending = enum.auto()
+    descending = enum.auto()
 
 
 @dataclass(kw_only=True)

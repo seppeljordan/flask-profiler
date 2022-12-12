@@ -44,7 +44,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-mypkg = [
+flask_profiler = [
     "storage/*",
     "static/dist/fonts/*",
     "static/dist/css/*",

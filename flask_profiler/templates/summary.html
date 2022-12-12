@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block headline %}
+Summarized view
+{% endblock %}
+
+{% block content %}
+<div>
+    <button
+	id="summary-table-update-button"
+	endpoint="{{ grouped_measurements_url }}"
+	target-id="main-summary-table">
+	Update table
+    </button>
+    <input is="datatable-filter-input" target-id="main-summary-table"></input>
+</div>
+<div class="summary-table">
+    <data-table id="main-summary-table"></data-table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('.static', filename='js/summary.js') }}"></script>
+{% endblock %}
