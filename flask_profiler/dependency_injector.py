@@ -12,7 +12,7 @@ from .presenters.filtered_presenter import FilteredPresenter
 from .presenters.get_timeseries_presenter import GetTimeseriesPresenter
 from .presenters.summary_presenter import SummaryPresenter
 from .use_cases.get_timeseries_use_case import GetTimeseriesUseCase
-from .views import GetRequestsTimeseriesView
+from .views import GetRequestsTimeseriesView, GetSummaryDataView
 
 
 class DependencyInjector:
@@ -50,4 +50,11 @@ class DependencyInjector:
             use_case=self.get_timeseries_use_case(),
             controller=self.get_timeseries_controller(),
             presenter=self.get_timeseries_presenter(),
+        )
+
+    def get_summary_data_view(self) -> GetSummaryDataView:
+        return GetSummaryDataView(
+            controller=self.get_filter_controller(),
+            presenter=self.get_summary_presenter(),
+            configuration=self.get_configuration(),
         )

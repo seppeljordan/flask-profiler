@@ -84,14 +84,8 @@ def filtered_measurements() -> ResponseT:
 @auth.login_required
 def grouped_measurements() -> ResponseT:
     injector = DependencyInjector()
-    controller = injector.get_filter_controller()
-    presenter = injector.get_summary_presenter()
-    config = injector.get_configuration()
-    args = dict(request.args.items())
-    query = controller.parse_filter(args)
-    measurements = config.collection.get_summary(query)
-    view_model = presenter.present_summaries(measurements)
-    return jsonify(view_model)
+    view = injector.get_summary_data_view()
+    return view.handle_request(request)
 
 
 @flask_profiler.route("/api/measurements/timeseries/")

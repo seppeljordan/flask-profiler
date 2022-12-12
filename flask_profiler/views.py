@@ -2,8 +2,11 @@ from dataclasses import dataclass
 
 from flask import Request, Response, jsonify
 
+from flask_profiler.configuration import Configuration
+from flask_profiler.controllers.filter_controller import FilterController
 from flask_profiler.controllers.get_timeseries_controller import GetTimeseriesController
 from flask_profiler.presenters.get_timeseries_presenter import GetTimeseriesPresenter
+from flask_profiler.presenters.summary_presenter import SummaryPresenter
 from flask_profiler.use_cases.get_timeseries_use_case import GetTimeseriesUseCase
 
 
@@ -20,3 +23,17 @@ class GetRequestsTimeseriesView:
             use_case_response
         )
         return jsonify(view_model.json_object)
+
+
+@dataclass
+class GetSummaryDataView:
+    controller: FilterController
+    presenter: SummaryPresenter
+    configuration: Configuration
+
+    def handle_request(self, request: Request) -> Response:
+        args = dict(request.args.items())
+        query = self.controller.parse_filter(args)
+        measurements = self.configuration.collection.get_summary(query)
+        view_model = self.presenter.present_summaries(measurements)
+        return jsonify(view_model)
