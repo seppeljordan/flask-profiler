@@ -25,6 +25,8 @@ class GetSummaryPresenter:
     class ViewModel:
         table: table.Table
         method_filter_text: str
+        name_filter_text: str
+        requested_after_filter_text: str
         pagination: Paginator
 
     def render_summary(
@@ -58,10 +60,14 @@ class GetSummaryPresenter:
                 ],
             ),
             method_filter_text=response.request.method or "",
+            name_filter_text=response.request.name_filter or "",
             pagination=Paginator(
                 total_page_count=pagination.get_total_pages_count(
                     response.total_results
                 ),
                 target_link=urlparse(url_for(".summary")),
             ),
+            requested_after_filter_text=""
+            if response.request.requested_after is None
+            else response.request.requested_after.isoformat(),
         )

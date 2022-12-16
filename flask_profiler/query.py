@@ -15,11 +15,6 @@ class FromClause(Protocol):
         ...
 
 
-class GroupByClause(Protocol):
-    def as_group_by_clause(self) -> str:
-        ...
-
-
 class SelectorClause(Protocol):
     def as_selector_clause(self) -> str:
         ...
@@ -27,16 +22,6 @@ class SelectorClause(Protocol):
 
 class Query(Protocol):
     def as_query(self) -> str:
-        ...
-
-
-class Condition(Protocol):
-    def as_condition(self) -> str:
-        ...
-
-
-class Scalar(Protocol):
-    def as_scalar(self) -> str:
         ...
 
 
@@ -57,7 +42,7 @@ class Selector(Protocol):
 class SelectQueryImpl:
     selector: SelectorClause
     from_clause: FromClause
-    where_clause: Optional[Condition] = None
+    where_clause: Optional[Expression] = None
     group_by: Optional[Expression] = None
     limit_clause: Optional[int] = None
     offset_clause: Optional[int] = None
@@ -66,7 +51,7 @@ class SelectQueryImpl:
         query = "SELECT " + self.selector.as_selector_clause()
         query += " FROM " + self.from_clause.as_from_clause()
         if self.where_clause is not None:
-            query += " WHERE " + self.where_clause.as_condition()
+            query += " WHERE " + self.where_clause.as_expression()
         if self.group_by is not None:
             query += " GROUP BY " + self.group_by.as_expression()
         if self.limit_clause is not None:
@@ -90,12 +75,12 @@ class SelectQueryImpl:
             offset_clause=n,
         )
 
-    def and_where(self, condition: Condition) -> SelectQueryImpl:
+    def and_where(self, expression: Expression) -> SelectQueryImpl:
         return replace(
             self,
-            where_clause=condition
+            where_clause=expression
             if self.where_clause is None
-            else And(self.where_clause, condition),
+            else BinaryOp("AND", self.where_clause, expression),
         )
 
     def __str__(self) -> str:
@@ -103,93 +88,52 @@ class SelectQueryImpl:
 
 
 @dataclass
-class And:
-    x: Condition
-    y: Condition
+class BinaryOp:
+    operator: str
+    x: Expression
+    y: Expression
 
-    def as_condition(self) -> str:
-        return f"({self.x.as_condition()} AND {self.y.as_condition()})"
-
-    def as_selector(self) -> str:
-        return self.as_condition()
-
-
-@dataclass
-class Or:
-    x: Condition
-    y: Condition
-
-    def as_condition(self) -> str:
-        return f"({self.x.as_condition()} OR {self.y.as_condition()})"
+    def as_expression(self) -> str:
+        return f"({self.x.as_expression()}) {self.operator} ({self.y.as_expression()})"
 
     def as_selector(self) -> str:
-        return self.as_condition()
-
-
-@dataclass
-class Equals:
-    x: Scalar
-    y: Scalar
-
-    def as_condition(self) -> str:
-        return f"({self.x.as_scalar()} = {self.y.as_scalar()})"
-
-    def as_selector(self) -> str:
-        return self.as_condition()
-
-
-@dataclass
-class In:
-    element: Scalar
-    container: Vector
-
-    def as_condition(self) -> str:
-        return f"{self.element} IN ({self.container.as_vector()})"
-
-    def as_selector(self) -> str:
-        return self.as_condition()
+        return self.as_expression()
 
 
 @dataclass
 class Literal:
     value: Any
 
-    def as_scalar(self) -> str:
+    def as_expression(self) -> str:
         if isinstance(self.value, int):
             return str(self.value)
         elif isinstance(self.value, float):
             return str(self.value)
         elif isinstance(self.value, (datetime.date, datetime.datetime)):
-            return self.value.isoformat()
+            return f"'{self.value.isoformat()}'"
         else:
             escaped = str(self.value).replace("'", "''")
             return f"'{escaped}'"
 
     def as_selector(self) -> str:
-        return self.as_scalar()
-
-    def as_expression(self) -> str:
-        return self.as_scalar()
+        return self.as_expression()
 
 
 @dataclass
 class Identifier:
     names: Union[str, List[str]]
 
-    def as_scalar(self) -> str:
+    def as_expression(self) -> str:
         if isinstance(self.names, str):
             return self.escape(self.names)
         else:
             return ".".join(map(self.escape, self.names))
 
     def as_from_clause(self) -> str:
-        return self.as_scalar()
+        return self.as_expression()
 
     def as_selector(self) -> str:
-        return self.as_scalar()
-
-    def as_expression(self) -> str:
-        return self.as_scalar()
+        return self.as_expression()
 
     @staticmethod
     def escape(value: str):
@@ -214,7 +158,7 @@ class Alias:
     name: Identifier
 
     def as_from_clause(self) -> str:
-        return f"({self.expression.as_query()}) AS {self.name.as_scalar()}"
+        return f"({self.expression.as_query()}) AS {self.name.as_expression()}"
 
 
 @dataclass

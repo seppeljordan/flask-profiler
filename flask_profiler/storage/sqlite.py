@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from datetime import datetime
 from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 
@@ -36,7 +37,6 @@ class SelectQuery(Generic[T]):
         )
 
     def __iter__(self) -> Iterator[T]:
-        print(self.query)
         results = self.db.execute(str(self.query))
         yield from map(self.mapping, results.fetchall())
 
@@ -91,7 +91,21 @@ class RecordResult(SelectQuery[Record]):
     def with_method(self, method: str) -> RecordResult:
         return self._with_modified_query(
             lambda query: query.and_where(
-                q.Equals(q.Identifier("method"), q.Literal(method))
+                q.BinaryOp("=", q.Identifier("method"), q.Literal(method))
+            )
+        )
+
+    def with_name_containing(self, substring: str) -> RecordResult:
+        return self._with_modified_query(
+            lambda query: query.and_where(
+                q.BinaryOp("LIKE", q.Identifier("name"), q.Literal(f"%{substring}%"))
+            )
+        )
+
+    def requested_after(self, t: datetime) -> RecordResult:
+        return self._with_modified_query(
+            lambda query: query.and_where(
+                q.BinaryOp(">=", q.Identifier("startedAt"), q.Literal(t.timestamp()))
             )
         )
 
@@ -171,7 +185,6 @@ class Sqlite:
         with self.lock:
             self.cursor.execute("DELETE FROM {0}".format(self.table_name))
             self.connection.commit()
-        # Making the api match with mongo collection, this function must return
         # True or False based on success of this delete operation
         return True if self.cursor.rowcount else False
 

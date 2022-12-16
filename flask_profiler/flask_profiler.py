@@ -176,7 +176,7 @@ def init_app(app: Flask) -> None:
     wrap_all_routes(app)
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:
-        logging.warning(" * CAUTION: flask-profiler is working without basic auth!")
+        logging.warning("flask-profiler is working without basic auth!")
 
 
 def sanatize_args(args: Iterable[Any]) -> List[str]:

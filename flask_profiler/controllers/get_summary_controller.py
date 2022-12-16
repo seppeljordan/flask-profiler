@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from flask_profiler.forms import FilterFormData
 from flask_profiler.pagination import PAGE_QUERY_ARGUMENT, PaginationContext
 from flask_profiler.presenters.get_summary_presenter import GetSummaryPresenter
 from flask_profiler.request import HttpRequest
@@ -20,11 +21,14 @@ class GetSummaryController(Controller):
 
     def handle_request(self, http_request: HttpRequest) -> HttpResponse:
         pagination = self.get_pagination_context(http_request)
-        args = http_request.get_arguments()
-        method = args.get("method") or None
-        if method:
-            method = method.upper()
-        request = GetSummaryUseCase.Request(limit=100, offset=0, method=method)
+        form_data = self.parse_form_data(http_request)
+        request = GetSummaryUseCase.Request(
+            limit=pagination.get_limit(),
+            offset=pagination.get_offset(),
+            method=form_data.method,
+            name_filter=form_data.name,
+            requested_after=form_data.requested_after,
+        )
         return self._process_request(request, pagination)
 
     def _process_request(
@@ -41,3 +45,7 @@ class GetSummaryController(Controller):
             current_page=current_page,
             page_size=20,
         )
+
+    def parse_form_data(self, http_request: HttpRequest) -> FilterFormData:
+        args = http_request.get_arguments()
+        return FilterFormData.parse_from_from(args)
