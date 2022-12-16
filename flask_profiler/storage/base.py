@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import Any, Dict, Generic, Iterator, List, Protocol, TypeVar
 
 QueryResultT = TypeVar("QueryResultT", bound="QueryResult")
@@ -146,6 +147,12 @@ class RecordResult(QueryResult[Record], Protocol):
         ...
 
     def with_method(self, method: str) -> RecordResult:
+        ...
+
+    def with_name_containing(self, substring: str) -> RecordResult:
+        ...
+
+    def requested_after(self, t: datetime) -> RecordResult:
         ...
 
 

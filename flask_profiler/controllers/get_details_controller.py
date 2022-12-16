@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from flask_profiler.forms import FilterFormData
 from flask_profiler.pagination import PAGE_QUERY_ARGUMENT, PaginationContext
 from flask_profiler.presenters.get_details_presenter import GetDetailsPresenter
 from flask_profiler.request import HttpRequest
@@ -18,13 +19,17 @@ class GetDetailsController(Controller):
 
     def handle_request(self, http_request: HttpRequest) -> HttpResponse:
         pagination_context = self.get_pagination_context(http_request)
+        form_data = FilterFormData.parse_from_from(http_request.get_arguments())
         request = GetDetailsUseCase.Request(
             limit=pagination_context.get_limit(),
             offset=pagination_context.get_offset(),
+            requested_after=form_data.requested_after,
+            name_filter=form_data.name,
+            method_filter=form_data.method,
         )
         response = self.use_case.get_details(request)
         view_model = self.presenter.render_details(
-            response=response, pagination=pagination_context
+            response=response, pagination=pagination_context, http_request=http_request
         )
         return self.view.render_view_model(view_model)
 

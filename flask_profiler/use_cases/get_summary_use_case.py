@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import List, Optional
 
 from flask_profiler.configuration import Configuration
@@ -22,6 +23,8 @@ class GetSummaryUseCase:
         limit: int
         offset: int
         method: Optional[str] = None
+        name_filter: Optional[str] = None
+        requested_after: Optional[datetime] = None
 
     @dataclass
     class Response:
@@ -35,6 +38,10 @@ class GetSummaryUseCase:
         records = self.configuration.collection.get_records()
         if request.method is not None:
             records = records.with_method(request.method)
+        if request.name_filter is not None:
+            records = records.with_name_containing(request.name_filter)
+        if request.requested_after is not None:
+            records = records.requested_after(request.requested_after)
         results = records.summarize()
         total_results = len(results)
         results = results.limit(request.limit).offset(request.offset)

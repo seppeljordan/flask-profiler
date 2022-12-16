@@ -7,8 +7,8 @@
     <body>
 	<h1>Response time profiling</h1>
 	<ul>
-	    <li><a href="{{ url_for('flask_profiler.summary') }}">Summarized view</a></li>
-	    <li><a href="{{ url_for('flask_profiler.details') }}">Detailed view</a></li>
+	    <li><a href="{{ url_for('.summary') }}">Summarized view</a></li>
+	    <li><a href="{{ url_for('.details') }}">Detailed view</a></li>
 	</ul>
 	<div>
 	    <h2>{% block headline %}Profiling{% endblock %}</h2>

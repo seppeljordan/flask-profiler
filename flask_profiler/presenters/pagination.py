@@ -25,7 +25,7 @@ class Paginator:
             )
 
     def get_page_link(self, n: int) -> str:
-        query = dict(parse_qs(self.target_link.query, max_num_fields=1))
+        query = dict(parse_qs(self.target_link.query))
         query[PAGE_QUERY_ARGUMENT] = [str(n)]
         link = copy(self.target_link)
         link = link._replace(
