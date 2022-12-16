@@ -29,13 +29,16 @@ class GetSummaryController(Controller):
             name_filter=form_data.name,
             requested_after=form_data.requested_after,
         )
-        return self._process_request(request, pagination)
+        return self._process_request(request, pagination, http_request)
 
     def _process_request(
-        self, request: GetSummaryUseCase.Request, pagination: PaginationContext
+        self,
+        request: GetSummaryUseCase.Request,
+        pagination: PaginationContext,
+        http_request: HttpRequest,
     ) -> HttpResponse:
         response = self.use_case.get_summary(request)
-        view_model = self.presenter.render_summary(response, pagination)
+        view_model = self.presenter.render_summary(response, pagination, http_request)
         return self.view.render_view_model(view_model)
 
     def get_pagination_context(self, request: HttpRequest) -> PaginationContext:
