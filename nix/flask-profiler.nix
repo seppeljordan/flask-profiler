@@ -1,5 +1,5 @@
-{ buildPythonPackage, flask-httpauth, flask, flask-testing
-, pytestCheckHook, setuptools }:
+{ buildPythonPackage, flask-httpauth, flask, flask-testing, pytestCheckHook
+, setuptools }:
 buildPythonPackage rec {
   pname = "flask_profiler";
   version = "master";
