@@ -1,7 +1,4 @@
 from dataclasses import dataclass
-from urllib.parse import urlparse
-
-from flask import url_for
 
 from flask_profiler.pagination import PaginationContext
 from flask_profiler.request import HttpRequest
