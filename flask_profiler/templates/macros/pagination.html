@@ -1,0 +1,9 @@
+{% macro render_paginator(paginator) %}
+
+<div>
+    {% for page in paginator %}
+    <a href="{{ page.link_target }}">{{ page.label }}</a>
+    {% endfor %}
+</div>
+
+{% endmacro %}

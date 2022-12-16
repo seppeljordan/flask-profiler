@@ -1,24 +1,12 @@
 {% extends "base.html" %}
+{% from 'macros/table.html' import render_table %}
+{% from 'macros/pagination.html' import render_paginator %}
 
 {% block headline %}
 Detailed view
 {% endblock %}
 
 {% block content %}
-<div>
-    <button
-	id="details-table-update-button"
-	endpoint="{{ filtered_measurements_url }}"
-	target-id="details-table">
-	Update table
-    </button>
-    <input is="datatable-filter-input" target-id="details-table"></input>
-</div>
-<div class="summary-table">
-    <data-table id="details-table"></data-table>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('.static', filename='js/details.js') }}"></script>
+{{ render_paginator(view_model.pagination) }}
+{{ render_table(view_model.table) }}
 {% endblock %}

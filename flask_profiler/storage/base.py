@@ -2,31 +2,34 @@ from __future__ import annotations
 
 import enum
 from dataclasses import asdict, dataclass
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Dict, Generic, Iterator, List, Protocol, TypeVar
+
+QueryResultT = TypeVar("QueryResultT", bound="QueryResult")
+T = TypeVar("T", covariant=True)
+
+
+class QueryResult(Protocol, Generic[T]):
+    def __iter__(self) -> Iterator[T]:
+        ...
+
+    def limit(self: QueryResultT, n: int) -> QueryResultT:
+        ...
+
+    def offset(self: QueryResultT, n: int) -> QueryResultT:
+        ...
+
+    def __len__(self) -> int:
+        ...
 
 
 class BaseStorage(Protocol):
-    def filter(self, criteria: FilterQuery) -> List[Record]:
-        ...
-
-    def get_summary(self, criteria: FilterQuery) -> List[Summary]:
+    def get_records(self) -> RecordResult:
         ...
 
     def insert(self, measurement: Measurement) -> None:
         ...
 
     def truncate(self) -> bool:
-        ...
-
-    def get_timeseries(
-        self, started_at: float, ended_at: float, interval: str
-    ) -> Dict[float, int]:
-        ...
-
-    def get_method_distribution(
-        self, started_at: float, ended_at: float
-    ) -> Dict[str, int]:
         ...
 
 
@@ -126,20 +129,6 @@ class Measurement:
 
 
 @dataclass(kw_only=True)
-class FilterQuery:
-    limit: int
-    skip: int
-    sort: Tuple[str, str]
-    startedAt: Optional[datetime] = None
-    endedAt: Optional[datetime] = None
-    elapsed: Optional[float] = None
-    name: Optional[str] = None
-    method: Optional[str] = None
-    args: Optional[List[Any]] = None
-    kwargs: Optional[Dict[str, Any]] = None
-
-
-@dataclass(kw_only=True)
 class Record:
     id: int
     name: str
@@ -151,20 +140,13 @@ class Record:
     method: str
     context: RequestMetadata
 
-    def serialize_to_json(self) -> Any:
-        data = {
-            "id": self.id,
-            "startedAt": self.startedAt,
-            "endedAt": self.endedAt,
-            "elapsed": self.elapsed,
-            "args": tuple(self.args),
-            "kwargs": self.kwargs,
-            "method": self.method,
-            "context": self.context.serialize_to_json(),
-            "name": self.name,
-        }
 
-        return data
+class RecordResult(QueryResult[Record], Protocol):
+    def summarize(self) -> SummaryResult:
+        ...
+
+    def with_method(self, method: str) -> RecordResult:
+        ...
 
 
 @dataclass(kw_only=True)
@@ -176,12 +158,6 @@ class Summary:
     max_elapsed: float
     avg_elapsed: float
 
-    def serialize_to_json(self) -> Any:
-        return dict(
-            method=self.method,
-            name=self.name,
-            count=self.count,
-            minElapsed=self.min_elapsed,
-            maxElapsed=self.max_elapsed,
-            avgElapsed=self.avg_elapsed,
-        )
+
+class SummaryResult(QueryResult[Summary], Protocol):
+    ...

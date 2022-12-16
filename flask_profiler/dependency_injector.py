@@ -6,13 +6,14 @@ from flask import Flask, current_app
 
 from .clock import SystemClock
 from .configuration import Configuration
-from .controllers.filter_controller import FilterController
-from .controllers.get_timeseries_controller import GetTimeseriesController
-from .presenters.filtered_presenter import FilteredPresenter
-from .presenters.get_timeseries_presenter import GetTimeseriesPresenter
-from .presenters.summary_presenter import SummaryPresenter
-from .use_cases.get_timeseries_use_case import GetTimeseriesUseCase
-from .views import GetRequestsTimeseriesView
+from .controllers.get_details_controller import GetDetailsController
+from .controllers.get_summary_controller import GetSummaryController
+from .presenters.get_details_presenter import GetDetailsPresenter
+from .presenters.get_summary_presenter import GetSummaryPresenter
+from .use_cases.get_details_use_case import GetDetailsUseCase
+from .use_cases.get_summary_use_case import GetSummaryUseCase
+from .views.get_details_view import GetDetailsView
+from .views.get_summary_view import GetSummaryView
 
 
 class DependencyInjector:
@@ -22,32 +23,39 @@ class DependencyInjector:
     def get_clock(self) -> SystemClock:
         return SystemClock()
 
-    def get_filter_controller(self) -> FilterController:
-        return FilterController(clock=self.get_clock())
-
     def get_configuration(self) -> Configuration:
         return Configuration(self.app)
 
-    def get_summary_presenter(self) -> SummaryPresenter:
-        return SummaryPresenter()
-
-    def get_filtered_presenter(self) -> FilteredPresenter:
-        return FilteredPresenter()
-
-    def get_timeseries_use_case(self) -> GetTimeseriesUseCase:
-        return GetTimeseriesUseCase(
-            storage=self.get_configuration().collection,
+    def get_summary_use_case(self) -> GetSummaryUseCase:
+        return GetSummaryUseCase(
+            configuration=self.get_configuration(),
         )
 
-    def get_timeseries_presenter(self) -> GetTimeseriesPresenter:
-        return GetTimeseriesPresenter()
-
-    def get_timeseries_controller(self) -> GetTimeseriesController:
-        return GetTimeseriesController(clock=self.get_clock())
-
-    def get_requests_timeseries_view(self) -> GetRequestsTimeseriesView:
-        return GetRequestsTimeseriesView(
-            use_case=self.get_timeseries_use_case(),
-            controller=self.get_timeseries_controller(),
-            presenter=self.get_timeseries_presenter(),
+    def get_summary_controller(self) -> GetSummaryController:
+        return GetSummaryController(
+            use_case=self.get_summary_use_case(),
+            presenter=self.get_summary_presenter(),
+            view=self.get_summary_view(),
         )
+
+    def get_summary_presenter(self) -> GetSummaryPresenter:
+        return GetSummaryPresenter()
+
+    def get_summary_view(self) -> GetSummaryView:
+        return GetSummaryView()
+
+    def get_details_controller(self) -> GetDetailsController:
+        return GetDetailsController(
+            use_case=self.get_details_use_case(),
+            view=self.get_details_view(),
+            presenter=self.get_details_presenter(),
+        )
+
+    def get_details_use_case(self) -> GetDetailsUseCase:
+        return GetDetailsUseCase(configuration=self.get_configuration())
+
+    def get_details_presenter(self) -> GetDetailsPresenter:
+        return GetDetailsPresenter()
+
+    def get_details_view(self) -> GetDetailsView:
+        return GetDetailsView()
