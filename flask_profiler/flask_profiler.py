@@ -8,11 +8,12 @@ from typing import Any, Callable, Dict, Iterable, List, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
 from flask import Response as FlaskResponse
-from flask import jsonify, render_template, request, url_for
+from flask import request
 from flask_httpauth import HTTPBasicAuth
 
 from .dependency_injector import DependencyInjector
 from .request import WrappedRequest
+from .response import HttpResponse
 from .storage.base import Measurement, RequestMetadata
 
 ResponseT = Union[str, FlaskResponse]
@@ -28,6 +29,13 @@ flask_profiler = Blueprint(
     static_url_path="/static",
     template_folder="templates",
 )
+
+
+def render_response(response: HttpResponse) -> FlaskResponse:
+    return FlaskResponse(
+        response=response.content,
+        status=response.status_code,
+    )
 
 
 @auth.verify_password
@@ -47,81 +55,20 @@ def verify_password(username, password):
 
 @flask_profiler.route("/")
 @auth.login_required
-def index() -> ResponseT:
-    return render_template(
-        "summary.html",
-        **dict(
-            grouped_measurements_url=url_for("flask_profiler.grouped_measurements"),
-        ),
-    )
+def summary() -> ResponseT:
+    injector = DependencyInjector()
+    controller = injector.get_summary_controller()
+    response = controller.handle_request(http_request=WrappedRequest(request))
+    return render_response(response)
 
 
 @flask_profiler.route("/details/")
 @auth.login_required
 def details() -> ResponseT:
-    return render_template(
-        "details.html",
-        **dict(
-            filtered_measurements_url=url_for("flask_profiler.filtered_measurements"),
-        ),
-    )
-
-
-@flask_profiler.route("/api/measurements/")
-@auth.login_required
-def filtered_measurements() -> ResponseT:
     injector = DependencyInjector()
-    controller = injector.get_filter_controller()
-    presenter = injector.get_filtered_presenter()
-    config = injector.get_configuration()
-    query = controller.parse_filter(WrappedRequest(request))
-    measurements = config.collection.filter(query)
-    view_model = presenter.present_filtered_measurements(measurements)
-    return jsonify(view_model)
-
-
-@flask_profiler.route("/api/measurements/grouped/")
-@auth.login_required
-def grouped_measurements() -> ResponseT:
-    injector = DependencyInjector()
-    view = injector.get_summary_data_view()
-    return view.handle_request(WrappedRequest(request))
-
-
-@flask_profiler.route("/api/measurements/timeseries/")
-@auth.login_required
-def request_timeseries() -> ResponseT:
-    injector = DependencyInjector()
-    view = injector.get_requests_timeseries_view()
-    return view.handle_request(request)
-
-
-@flask_profiler.route("/api/measurements/methodDistribution/")
-@auth.login_required
-def method_distribution() -> ResponseT:
-    injector = DependencyInjector()
-    clock = injector.get_clock()
-    config = injector.get_configuration()
-    args = dict(request.args.items())
-    return jsonify(
-        {
-            "distribution": config.collection.get_method_distribution(
-                started_at=float(
-                    args.get("startedAt", clock.get_epoch() - 3600 * 24 * 7)
-                ),
-                ended_at=float(args.get("endedAt", clock.get_epoch())),
-            )
-        }
-    )
-
-
-@flask_profiler.route("/db/deleteDatabase")
-@auth.login_required
-def delete_database() -> ResponseT:
-    injector = DependencyInjector()
-    config = injector.get_configuration()
-    response = jsonify({"status": config.collection.truncate()})
-    return response
+    controller = injector.get_details_controller()
+    response = controller.handle_request(http_request=WrappedRequest(request))
+    return render_response(response)
 
 
 @flask_profiler.after_request

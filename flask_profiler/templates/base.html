@@ -2,18 +2,12 @@
 <html>
     <head>
 	<meta name="robots" content="noindex, nofollow">
-	<script src="{{ url_for('.static', filename='js/datatable.js') }}"></script>
-	<script src="{{ url_for('.static', filename='js/controllers.js') }}"></script>
-	<script src="{{ url_for('.static', filename='js/columns.js') }}"></script>
-	<script src="{{ url_for('.static', filename='js/httpClient.js') }}"></script>
 	<link href="{{ url_for('.static', filename='css/main.css') }}" rel="stylesheet"></link>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	{% block scripts %}{% endblock %}
     </head>
     <body>
 	<h1>Response time profiling</h1>
 	<ul>
-	    <li><a href="{{ url_for('flask_profiler.index') }}">Summarized view</a></li>
+	    <li><a href="{{ url_for('flask_profiler.summary') }}">Summarized view</a></li>
 	    <li><a href="{{ url_for('flask_profiler.details') }}">Detailed view</a></li>
 	</ul>
 	<div>

@@ -1,24 +1,19 @@
 {% extends "base.html" %}
+{% from 'macros/table.html' import render_table %}
+{% from 'macros/pagination.html' import render_paginator %}
 
 {% block headline %}
 Summarized view
 {% endblock %}
 
 {% block content %}
-<div>
-    <button
-	id="summary-table-update-button"
-	endpoint="{{ grouped_measurements_url }}"
-	target-id="main-summary-table">
-	Update table
-    </button>
-    <input is="datatable-filter-input" target-id="main-summary-table"></input>
-</div>
-<div class="summary-table">
-    <data-table id="main-summary-table"></data-table>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('.static', filename='js/summary.js') }}"></script>
+<h3>Filters</h3>
+<form method="get">
+    <div>
+	<label>Method name:</label>
+	<input name="method" valueo="{{view_model.method_filter_text}}"></input>
+    </div>
+</form>
+{{ render_paginator(view_model.pagination) }}
+{{ render_table(view_model.table) }}
 {% endblock %}

@@ -1,21 +1,18 @@
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol
+from typing import Dict, Protocol
+from urllib.parse import unquote
 
 from flask import Request
-from werkzeug.exceptions import BadRequest
 
 
 class HttpRequest(Protocol):
-    def get_content_as_json(self) -> Optional[Any]:
-        ...
+    def get_arguments(self) -> Dict[str, str]:
+        pass
 
 
 @dataclass
 class WrappedRequest:
     request: Request
 
-    def get_content_as_json(self) -> Any:
-        try:
-            return self.request.get_json()
-        except BadRequest:
-            return None
+    def get_arguments(self) -> Dict[str, str]:
+        return {key: unquote(value) for key, value in self.request.args.items()}
