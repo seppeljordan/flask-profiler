@@ -1,5 +1,5 @@
-{ buildPythonPackage, simplejson, flask-httpauth, flask, sqlalchemy
-, flask-testing, pytestCheckHook, setuptools, pymongo }:
+{ buildPythonPackage, flask-httpauth, flask, flask-testing
+, pytestCheckHook, setuptools }:
 buildPythonPackage rec {
   pname = "flask_profiler";
   version = "master";
