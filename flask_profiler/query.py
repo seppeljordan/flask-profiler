@@ -88,6 +88,29 @@ class SelectQueryImpl:
 
 
 @dataclass
+class InsertImpl:
+    into: Identifier
+    rows: List[List[Expression]]
+    columns: Optional[List[Identifier]] = None
+    alias: Optional[Identifier] = None
+
+    def __str__(self) -> str:
+        statement = f"INSERT INTO {self.into.as_expression()} "
+        if self.alias is not None:
+            statement += f"AS {self.alias.as_expression()} "
+        if self.columns is not None:
+            statement += (
+                "(" + ",".join(map(lambda c: c.as_expression(), self.columns)) + ") "
+            )
+        statement += "VALUES "
+        statement += ", ".join(
+            "(" + ", ".join(value.as_expression() for value in row) + ")"
+            for row in self.rows
+        )
+        return statement
+
+
+@dataclass
 class BinaryOp:
     operator: str
     x: Expression
@@ -150,6 +173,14 @@ class ExpressionList:
             return ", ".join(x.as_expression() for x in self.expressions)
         else:
             return "NULL"
+
+
+class Null:
+    def as_expression(self) -> str:
+        return "NULL"
+
+
+null = Null()
 
 
 @dataclass
