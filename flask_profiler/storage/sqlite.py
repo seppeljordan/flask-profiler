@@ -161,14 +161,33 @@ class Sqlite:
         context = json.dumps(measurement.context.serialize_to_json())
         method = measurement.method
         name = measurement.name
-        sql = """INSERT INTO {0} VALUES (
-            null, ?, ?, ?, ?,?, ?, ?, ?)""".format(
-            self.table_name
+        query = q.InsertImpl(
+            into=q.Identifier(self.table_name),
+            columns=[
+                q.Identifier("startedAt"),
+                q.Identifier("endedAt"),
+                q.Identifier("elapsed"),
+                q.Identifier("args"),
+                q.Identifier("kwargs"),
+                q.Identifier("method"),
+                q.Identifier("context"),
+                q.Identifier("name"),
+            ],
+            rows=[
+                [
+                    q.Literal(startedAt),
+                    q.Literal(endedAt),
+                    q.Literal(elapsed),
+                    q.Literal(args),
+                    q.Literal(kwargs),
+                    q.Literal(method),
+                    q.Literal(context),
+                    q.Literal(name),
+                ]
+            ],
         )
         with self.lock:
-            self.cursor.execute(
-                sql, (startedAt, endedAt, elapsed, args, kwargs, method, context, name)
-            )
+            self.cursor.execute(str(query))
             self.connection.commit()
 
     def get_records(self) -> RecordResult:
