@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass, replace
-from typing import Any, Dict, List, Optional, Protocol, Union
+from typing import Any, List, Optional, Protocol, Union
 
 
 class Expression(Protocol):
