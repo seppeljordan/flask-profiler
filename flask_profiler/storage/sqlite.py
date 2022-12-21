@@ -20,7 +20,7 @@ class SelectQuery(Generic[T]):
         self,
         db: Cursor,
         mapping: Callable[[Any], T],
-        query: q.SelectQueryImpl,
+        query: q.Select,
     ) -> None:
         self.mapping = mapping
         self.db = db
@@ -28,7 +28,7 @@ class SelectQuery(Generic[T]):
 
     def _with_modified_query(
         self: SelectQueryT,
-        modification: Callable[[q.SelectQueryImpl], q.SelectQueryImpl],
+        modification: Callable[[q.Select], q.Select],
     ) -> SelectQueryT:
         return type(self)(
             db=self.db,
@@ -41,7 +41,7 @@ class SelectQuery(Generic[T]):
         yield from map(self.mapping, results.fetchall())
 
     def __len__(self) -> int:
-        count_query = q.SelectQueryImpl(
+        count_query = q.Select(
             from_clause=q.Alias(self.query, name=q.Identifier("subquery")),
             selector=q.SelectorList([q.Aggregate("COUNT", q.All())]),
         )
@@ -59,7 +59,7 @@ class RecordResult(SelectQuery[Record]):
     def summarize(self) -> SelectQuery[Summary]:
         return type(cast(SelectQuery[Summary], self))(
             db=self.db,
-            query=q.SelectQueryImpl(
+            query=q.Select(
                 selector=q.SelectorList(
                     [
                         q.Identifier("method"),
@@ -111,46 +111,66 @@ class RecordResult(SelectQuery[Record]):
 
 
 class Sqlite:
-    def __init__(self, sqlite_file: str, table_name: str) -> None:
+    def __init__(self, sqlite_file: str) -> None:
         self.sqlite_file = sqlite_file
-        self.table_name = table_name
         self.connection = sqlite3.connect(self.sqlite_file, check_same_thread=False)
         self.cursor = self.connection.cursor()
         self.lock = threading.Lock()
-        try:
-            self.create_database()
-        except sqlite3.OperationalError as e:
-            if "already exists" not in str(e):
-                raise e
+        self.create_database()
+        self.connection.commit()
 
     def create_database(self) -> None:
-        with self.lock:
-            sql = """
-                CREATE TABLE {table_name} (
-                    ID Integer PRIMARY KEY AUTOINCREMENT,
-                    startedAt REAL,
-                    endedAt REAL,
-                    elapsed REAL,
-                    args TEXT,
-                    kwargs TEXT,
-                    method TEXT,
-                    context TEXT,
-                    name TEXT
-                );
-            """.format(
-                table_name=self.table_name,
+        if not self.is_version_at_least(1):
+            statement: q.Statement = q.CreateTable(
+                if_not_exists=True,
+                name=q.Identifier("measurements"),
+                columns=[
+                    q.ColumnDefinition(
+                        q.Identifier("ID"),
+                        q.ColumnType.INTEGER,
+                        constraints=[q.PrimaryKey(autoincrement=True)],
+                    ),
+                    q.ColumnDefinition(q.Identifier("startedAt"), q.ColumnType.REAL),
+                    q.ColumnDefinition(q.Identifier("endedAt"), q.ColumnType.REAL),
+                    q.ColumnDefinition(q.Identifier("elapsed"), q.ColumnType.REAL),
+                    q.ColumnDefinition(q.Identifier("args"), q.ColumnType.TEXT),
+                    q.ColumnDefinition(q.Identifier("kwargs"), q.ColumnType.TEXT),
+                    q.ColumnDefinition(q.Identifier("method"), q.ColumnType.TEXT),
+                    q.ColumnDefinition(q.Identifier("context"), q.ColumnType.TEXT),
+                    q.ColumnDefinition(q.Identifier("name"), q.ColumnType.TEXT),
+                ],
             )
-            self.cursor.execute(sql)
-
-            sql = """
-            CREATE INDEX measurement_index ON {table_name}
-                (startedAt, endedAt, elapsed, name, method);
-            """.format(
-                table_name=self.table_name,
+            self.cursor.execute(str(statement))
+            statement = q.CreateIndex(
+                if_not_exists=True,
+                name=q.Identifier("measurement_index"),
+                on=q.Identifier("measurements"),
+                indices=[
+                    q.IndexDefinition(q.Identifier("startedAt")),
+                    q.IndexDefinition(q.Identifier("endedAt")),
+                    q.IndexDefinition(q.Identifier("elapsed")),
+                    q.IndexDefinition(q.Identifier("name")),
+                    q.IndexDefinition(q.Identifier("method")),
+                ],
             )
-            self.cursor.execute(sql)
+            self.cursor.execute(statement.as_statement())
+            self.bump_version(1)
 
-            self.connection.commit()
+    def is_version_at_least(self, version: int) -> bool:
+        actual_version = self.cursor.execute(
+            q.Pragma(
+                name="user_version",
+            ).as_statement()
+        ).fetchone()[0]
+        return actual_version >= version
+
+    def bump_version(self, version: int) -> None:
+        if not self.is_version_at_least(version):
+            sql = q.Pragma(
+                name="user_version",
+                value=q.Literal(version),
+            ).as_statement()
+            self.cursor.execute(sql)
 
     def insert(self, measurement: Measurement) -> None:
         endedAt = measurement.endedAt
@@ -161,8 +181,8 @@ class Sqlite:
         context = json.dumps(measurement.context.serialize_to_json())
         method = measurement.method
         name = measurement.name
-        query = q.InsertImpl(
-            into=q.Identifier(self.table_name),
+        query = q.Insert(
+            into=q.Identifier("measurements"),
             columns=[
                 q.Identifier("startedAt"),
                 q.Identifier("endedAt"),
@@ -194,17 +214,17 @@ class Sqlite:
         return RecordResult(
             db=self.cursor,
             mapping=self._row_to_record,
-            query=q.SelectQueryImpl(
+            query=q.Select(
                 selector=q.SelectorList([q.All()]),
-                from_clause=q.Identifier(self.table_name),
+                from_clause=q.Identifier("measurements"),
             ),
         )
 
     def truncate(self) -> bool:
         with self.lock:
-            self.cursor.execute("DELETE FROM {0}".format(self.table_name))
+            statement = q.Delete(q.Identifier("measurements"))
+            self.cursor.execute(statement.as_statement())
             self.connection.commit()
-        # True or False based on success of this delete operation
         return True if self.cursor.rowcount else False
 
     def _row_to_record(self, row) -> Record:

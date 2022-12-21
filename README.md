@@ -118,7 +118,6 @@ http://127.0.0.1:5000/flask-profiler/api/measurements?sort=elapsed,desc
 app.config["flask_profiler"] = {
     "storage": {
         "FILE": "flask_profiler.sql",
-        "TABLE": "flask_profiler_measurements",
     }
 }
 ```
@@ -128,7 +127,6 @@ Below the other options are listed.
 | Filter key   |      Description      |  Default |
 |----------|-------------|------|
 | storage.FILE | SQLite database file name | flask_profiler.sql|
-| storage.TABLE | table name in which profiling data will reside | measurements |
 
 ### Sampling
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import enum
 from dataclasses import dataclass, replace
 from typing import Any, List, Optional, Protocol, Union
 
@@ -35,11 +36,26 @@ class Selector(Protocol):
         ...
 
 
-# Implementation
+class Statement(Protocol):
+    def as_statement(self) -> str:
+        ...
+
+
+class PragmaValue(Protocol):
+    def as_pragma_value(self) -> str:
+        ...
+
+
+class ColumnConstraint(Protocol):
+    def as_column_constraint(self) -> str:
+        ...
+
+
+# Statements
 
 
 @dataclass
-class SelectQueryImpl:
+class Select:
     selector: SelectorClause
     from_clause: FromClause
     where_clause: Optional[Expression] = None
@@ -63,19 +79,19 @@ class SelectQueryImpl:
     def as_vector(self) -> str:
         return self.as_query()
 
-    def limit(self, n) -> SelectQueryImpl:
+    def limit(self, n) -> Select:
         return replace(
             self,
             limit_clause=n,
         )
 
-    def offset(self, n) -> SelectQueryImpl:
+    def offset(self, n) -> Select:
         return replace(
             self,
             offset_clause=n,
         )
 
-    def and_where(self, expression: Expression) -> SelectQueryImpl:
+    def and_where(self, expression: Expression) -> Select:
         return replace(
             self,
             where_clause=expression
@@ -86,9 +102,12 @@ class SelectQueryImpl:
     def __str__(self) -> str:
         return self.as_query()
 
+    def as_statement(self) -> str:
+        return str(self)
 
-@dataclass
-class InsertImpl:
+
+@dataclass(frozen=True)
+class Insert:
     into: Identifier
     rows: List[List[Expression]]
     columns: Optional[List[Identifier]] = None
@@ -108,6 +127,131 @@ class InsertImpl:
             for row in self.rows
         )
         return statement
+
+    def as_statement(self) -> str:
+        return str(self)
+
+
+@dataclass
+class Pragma:
+    name: str
+    schema: Optional[str] = None
+    value: Optional[PragmaValue] = None
+
+    def __str__(self) -> str:
+        statement = "PRAGMA "
+        if self.schema is not None:
+            statement += self.schema + "."
+        statement += self.name
+        if self.value is not None:
+            statement += f" = {self.value.as_pragma_value()}"
+        return statement
+
+    def as_statement(self) -> str:
+        return str(self)
+
+
+@dataclass
+class CreateTable:
+    name: Identifier
+    columns: List[ColumnDefinition]
+    if_not_exists: bool = False
+
+    def __str__(self) -> str:
+        statement = "CREATE TABLE "
+        if self.if_not_exists:
+            statement += "IF NOT EXISTS "
+        statement += str(self.name) + " (" + ", ".join(map(str, self.columns)) + ")"
+        return statement
+
+    def as_statement(self) -> str:
+        return str(self)
+
+
+@dataclass
+class CreateIndex:
+    name: Identifier
+    on: Identifier
+    indices: List[IndexDefinition]
+    if_not_exists: bool = False
+
+    def __str__(self) -> str:
+        statement = f"CREATE INDEX {self.name} ON {self.on} ("
+        statement += ", ".join(map(str, self.indices)) + ")"
+        return statement
+
+    def as_statement(self) -> str:
+        return str(self)
+
+
+@dataclass
+class Delete:
+    table: Identifier
+    where: Optional[Expression] = None
+
+    def __str__(self) -> str:
+        statement = f"DELETE FROM {self.table}"
+        if self.where:
+            statement += f" {self.where.as_expression()}"
+        return statement
+
+    def as_statement(self) -> str:
+        return str(self)
+
+
+# Details
+
+
+@dataclass
+class IndexDefinition:
+    column: Expression
+    descending: bool = False
+
+    def __str__(self) -> str:
+        definition = self.column.as_expression()
+        if self.descending:
+            definition += " DESC"
+        return definition
+
+
+@dataclass
+class ColumnDefinition:
+    name: Identifier
+    column_type: ColumnType
+    constraints: Optional[List[ColumnConstraint]] = None
+
+    def __str__(self) -> str:
+        definition = f"{self.name} {self.column_type.as_type_def()}"
+        if self.constraints:
+            definition += " " + " ".join(
+                constraint.as_column_constraint() for constraint in self.constraints
+            )
+        return definition
+
+
+class ColumnType(enum.Enum):
+    NULL = "NULL"
+    INTEGER = "INTEGER"
+    REAL = "REAL"
+    TEXT = "TEXT"
+    BLOB = "BLOB"
+
+    def as_type_def(self) -> str:
+        return self.value
+
+
+@dataclass
+class PrimaryKey:
+    autoincrement: bool = False
+
+    def __str__(self) -> str:
+        constraint = "PRIMARY KEY"
+        if self.autoincrement:
+            constraint += " AUTOINCREMENT"
+        return constraint
+
+    def as_column_constraint(self) -> str:
+        return str(self)
 
 
 @dataclass
@@ -141,22 +285,28 @@ class Literal:
     def as_selector(self) -> str:
         return self.as_expression()
 
+    def as_pragma_value(self) -> str:
+        return self.as_expression()
+
 
 @dataclass
 class Identifier:
     names: Union[str, List[str]]
 
-    def as_expression(self) -> str:
+    def __str__(self) -> str:
         if isinstance(self.names, str):
             return self.escape(self.names)
         else:
             return ".".join(map(self.escape, self.names))
 
+    def as_expression(self) -> str:
+        return str(self)
+
     def as_from_clause(self) -> str:
-        return self.as_expression()
+        return str(self)
 
     def as_selector(self) -> str:
-        return self.as_expression()
+        return str(self)
 
     @staticmethod
     def escape(value: str):
@@ -172,12 +322,18 @@ class ExpressionList:
         if self.expressions:
             return ", ".join(x.as_expression() for x in self.expressions)
         else:
-            return "NULL"
+            return str(null)
 
 
 class Null:
-    def as_expression(self) -> str:
+    def __str__(self) -> str:
         return "NULL"
+
+    def as_expression(self) -> str:
+        return str(self)
+
+    def as_pragma_value(self) -> str:
+        return str(self)
 
 
 null = Null()

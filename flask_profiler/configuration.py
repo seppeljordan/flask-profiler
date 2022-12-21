@@ -63,7 +63,6 @@ class Configuration:
         conf = self.read_config().get("storage", {})
         return Sqlite(
             sqlite_file=conf.get("FILE", "flask_profiler.sql"),
-            table_name=conf.get("TABLE", "measurements"),
         )
 
     def read_config(self):
