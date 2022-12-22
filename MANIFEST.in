@@ -2,6 +2,6 @@ include *.txt
 include *.md
 include setup.py
 include LICENSE
-graft flask_profiler/static/
-recursive-include flask_profiler/static *
-global-exclude *.pyc
+recursive-include flask_profiler/static *.css
+recursive-include flask_profiler/templates *.html
+recursive-include flask_profiler/storage/sqlite/migrations *.sql
