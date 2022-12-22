@@ -8,8 +8,9 @@ from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 
 from flask_profiler import query as q
+from flask_profiler.storage.base import Measurement, Record, RequestMetadata, Summary
 
-from .base import Measurement, Record, RequestMetadata, Summary
+from .migrations import Migrations
 
 T = TypeVar("T")
 SelectQueryT = TypeVar("SelectQueryT", bound="SelectQuery")
@@ -120,49 +121,14 @@ class Sqlite:
         self.connection.commit()
 
     def create_database(self) -> None:
-        if not self.is_version_at_least(1):
-            statement: q.Statement = q.CreateTable(
-                if_not_exists=True,
-                name=q.Identifier("measurements"),
-                columns=[
-                    q.ColumnDefinition(
-                        q.Identifier("ID"),
-                        q.ColumnType.INTEGER,
-                        constraints=[q.PrimaryKey(autoincrement=True)],
-                    ),
-                    q.ColumnDefinition(q.Identifier("startedAt"), q.ColumnType.REAL),
-                    q.ColumnDefinition(q.Identifier("endedAt"), q.ColumnType.REAL),
-                    q.ColumnDefinition(q.Identifier("elapsed"), q.ColumnType.REAL),
-                    q.ColumnDefinition(q.Identifier("args"), q.ColumnType.TEXT),
-                    q.ColumnDefinition(q.Identifier("kwargs"), q.ColumnType.TEXT),
-                    q.ColumnDefinition(q.Identifier("method"), q.ColumnType.TEXT),
-                    q.ColumnDefinition(q.Identifier("context"), q.ColumnType.TEXT),
-                    q.ColumnDefinition(q.Identifier("name"), q.ColumnType.TEXT),
-                ],
-            )
-            self.cursor.execute(str(statement))
-            statement = q.CreateIndex(
-                if_not_exists=True,
-                name=q.Identifier("measurement_index"),
-                on=q.Identifier("measurements"),
-                indices=[
-                    q.IndexDefinition(q.Identifier("startedAt")),
-                    q.IndexDefinition(q.Identifier("endedAt")),
-                    q.IndexDefinition(q.Identifier("elapsed")),
-                    q.IndexDefinition(q.Identifier("name")),
-                    q.IndexDefinition(q.Identifier("method")),
-                ],
-            )
-            self.cursor.execute(statement.as_statement())
-            self.bump_version(1)
+        migrations = Migrations()
+        current_version = self.get_current_version()
+        for migration in migrations.get_relevant_versions(current_version):
+            migration.run(self.cursor)
+        self.bump_version(migrations.latest_version())
 
     def is_version_at_least(self, version: int) -> bool:
-        actual_version = self.cursor.execute(
-            q.Pragma(
-                name="user_version",
-            ).as_statement()
-        ).fetchone()[0]
-        return actual_version >= version
+        return self.get_current_version() >= version
 
     def bump_version(self, version: int) -> None:
         if not self.is_version_at_least(version):
@@ -171,6 +137,13 @@ class Sqlite:
                 value=q.Literal(version),
             ).as_statement()
             self.cursor.execute(sql)
+
+    def get_current_version(self) -> int:
+        return self.cursor.execute(
+            q.Pragma(
+                name="user_version",
+            ).as_statement()
+        ).fetchone()[0]
 
     def insert(self, measurement: Measurement) -> None:
         endedAt = measurement.endedAt

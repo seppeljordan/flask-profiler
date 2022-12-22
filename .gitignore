@@ -61,7 +61,7 @@ target/
 .idea/
 
 # Generated files
-*.sql
+/flask_profiler.sql
 
 # nix
 /result

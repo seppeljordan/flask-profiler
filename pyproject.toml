@@ -34,14 +34,8 @@ file = "LICENSE"
 [project.urls]
 github = "https://github.com/seppeljordan/flask-profiler"
 
-[tool.setuptools]
-packages = [
-    "flask_profiler",
-    "flask_profiler.storage",
-    "flask_profiler.controllers",
-    "flask_profiler.presenters",
-    "flask_profiler.use_cases",
-]
+[tool.setuptools.packages.find]
+exclude = ["examples"]
 
 [tool.setuptools.package-data]
 flask_profiler = [
