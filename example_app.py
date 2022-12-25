@@ -1,6 +1,10 @@
+import logging
+
 from flask import Flask
 
 from flask_profiler import init_app
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def create_app() -> Flask:

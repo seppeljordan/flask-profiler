@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import itertools
+import logging
 from pathlib import Path
-from sqlite3 import Cursor
+from sqlite3 import Connection, Cursor
 from typing import Iterator
+
+from flask_profiler import query as q
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Migration:
@@ -17,18 +22,30 @@ class Migration:
         return cls(sql_code)
 
     def run(self, cursor: Cursor) -> None:
+        LOGGER.debug("Run migration %s", self.sql_code)
         cursor.executescript(self.sql_code)
 
 
 class Migrations:
-    def __init__(self) -> None:
+    def __init__(self, connection: Connection) -> None:
+        self.connection = connection
         self.migration_files = ["migration_1"]
 
-    def get_relevant_versions(self, version: int) -> Iterator[Migration]:
+    def run_necessary_migrations(self) -> None:
+        cursor = self.connection.cursor()
+        for migration in self.get_relevant_versions(cursor):
+            migration.run(cursor)
+
+    def get_relevant_versions(self, cursor: Cursor) -> Iterator[Migration]:
+        version = self.get_current_version(cursor)
         yield from map(
             Migration.from_filename,
             itertools.islice(self.migration_files, version, None),
         )
 
-    def latest_version(self) -> int:
-        return len(self.migration_files)
+    def get_current_version(self, cursor: Cursor) -> int:
+        return cursor.execute(
+            q.Pragma(
+                name="user_version",
+            ).as_statement()
+        ).fetchone()[0]

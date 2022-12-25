@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
-import threading
+from dataclasses import dataclass, replace
 from datetime import datetime
 from sqlite3 import Cursor
-from typing import Any, Callable, Generic, Iterator, TypeVar, cast
+from typing import Any, Callable, Dict, Generic, Iterator, TypeVar, cast
 
 from flask_profiler import query as q
 from flask_profiler.storage.base import Measurement, Record, RequestMetadata, Summary
@@ -16,28 +17,23 @@ T = TypeVar("T")
 SelectQueryT = TypeVar("SelectQueryT", bound="SelectQuery")
 
 
+LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
 class SelectQuery(Generic[T]):
-    def __init__(
-        self,
-        db: Cursor,
-        mapping: Callable[[Any], T],
-        query: q.Select,
-    ) -> None:
-        self.mapping = mapping
-        self.db = db
-        self.query = query
+    mapping: Callable[[Any], T]
+    db: Cursor
+    query: q.Select
 
     def _with_modified_query(
         self: SelectQueryT,
         modification: Callable[[q.Select], q.Select],
     ) -> SelectQueryT:
-        return type(self)(
-            db=self.db,
-            mapping=self.mapping,
-            query=modification(self.query),
-        )
+        return replace(self, query=modification(self.query))
 
     def __iter__(self) -> Iterator[T]:
+        LOGGER.debug("Running query %s", self.query)
         results = self.db.execute(str(self.query))
         yield from map(self.mapping, results.fetchall())
 
@@ -46,6 +42,7 @@ class SelectQuery(Generic[T]):
             from_clause=q.Alias(self.query, name=q.Identifier("subquery")),
             selector=q.SelectorList([q.Aggregate("COUNT", q.All())]),
         )
+        LOGGER.debug("Running query %s", count_query)
         result = self.db.execute(str(count_query))
         return result.fetchone()[0]
 
@@ -58,17 +55,29 @@ class SelectQuery(Generic[T]):
 
 class RecordResult(SelectQuery[Record]):
     def summarize(self) -> SelectQuery[Summary]:
-        return type(cast(SelectQuery[Summary], self))(
-            db=self.db,
+        return replace(
+            cast(SelectQuery[Summary], self),
             query=q.Select(
                 selector=q.SelectorList(
                     [
                         q.Identifier("method"),
                         q.Identifier("name"),
-                        q.Aggregate("COUNT", q.Identifier("id")),
-                        q.Aggregate("MIN", q.Identifier("elapsed")),
-                        q.Aggregate("MAX", q.Identifier("elapsed")),
-                        q.Aggregate("AVG", q.Identifier("elapsed")),
+                        q.Alias(
+                            q.Aggregate("COUNT", q.Identifier("id")),
+                            q.Identifier("count"),
+                        ),
+                        q.Alias(
+                            q.Aggregate("MIN", q.Identifier("elapsed")),
+                            q.Identifier("min"),
+                        ),
+                        q.Alias(
+                            q.Aggregate("MAX", q.Identifier("elapsed")),
+                            q.Identifier("max"),
+                        ),
+                        q.Alias(
+                            q.Aggregate("AVG", q.Identifier("elapsed")),
+                            q.Identifier("avg"),
+                        ),
                     ]
                 ),
                 from_clause=q.Alias(self.query, name=q.Identifier("records")),
@@ -80,12 +89,12 @@ class RecordResult(SelectQuery[Record]):
                 ),
             ),
             mapping=lambda row: Summary(
-                method=row[0],
-                name=row[1],
-                count=row[2],
-                min_elapsed=row[3],
-                max_elapsed=row[4],
-                avg_elapsed=row[5],
+                method=row["method"],
+                name=row["name"],
+                count=row["count"],
+                min_elapsed=row["min"],
+                max_elapsed=row["max"],
+                avg_elapsed=row["avg"],
             ),
         )
 
@@ -115,42 +124,19 @@ class Sqlite:
     def __init__(self, sqlite_file: str) -> None:
         self.sqlite_file = sqlite_file
         self.connection = sqlite3.connect(self.sqlite_file, check_same_thread=False)
+        self.connection.row_factory = sqlite3.Row
         self.cursor = self.connection.cursor()
-        self.lock = threading.Lock()
         self.create_database()
-        self.connection.commit()
 
     def create_database(self) -> None:
-        migrations = Migrations()
-        current_version = self.get_current_version()
-        for migration in migrations.get_relevant_versions(current_version):
-            migration.run(self.cursor)
-        self.bump_version(migrations.latest_version())
-
-    def is_version_at_least(self, version: int) -> bool:
-        return self.get_current_version() >= version
-
-    def bump_version(self, version: int) -> None:
-        if not self.is_version_at_least(version):
-            sql = q.Pragma(
-                name="user_version",
-                value=q.Literal(version),
-            ).as_statement()
-            self.cursor.execute(sql)
-
-    def get_current_version(self) -> int:
-        return self.cursor.execute(
-            q.Pragma(
-                name="user_version",
-            ).as_statement()
-        ).fetchone()[0]
+        migrations = Migrations(self.connection)
+        migrations.run_necessary_migrations()
 
     def insert(self, measurement: Measurement) -> None:
         endedAt = measurement.endedAt
         startedAt = measurement.startedAt
         elapsed = measurement.elapsed
         args = json.dumps(list(measurement.args))
-        kwargs = json.dumps(measurement.kwargs)
         context = json.dumps(measurement.context.serialize_to_json())
         method = measurement.method
         name = measurement.name
@@ -161,7 +147,6 @@ class Sqlite:
                 q.Identifier("endedAt"),
                 q.Identifier("elapsed"),
                 q.Identifier("args"),
-                q.Identifier("kwargs"),
                 q.Identifier("method"),
                 q.Identifier("context"),
                 q.Identifier("name"),
@@ -172,45 +157,111 @@ class Sqlite:
                     q.Literal(endedAt),
                     q.Literal(elapsed),
                     q.Literal(args),
-                    q.Literal(kwargs),
                     q.Literal(method),
                     q.Literal(context),
                     q.Literal(name),
                 ]
             ],
+            returning=q.All(),
         )
-        with self.lock:
-            self.cursor.execute(str(query))
-            self.connection.commit()
+        result = self.cursor.execute(str(query))
+        measurement_id = result.fetchone()[0]
+        if measurement.kwargs:
+            kwargs_query = q.Insert(
+                into=q.Identifier("keyword_arguments"),
+                columns=[
+                    q.Identifier("measurement"),
+                    q.Identifier("key"),
+                    q.Identifier("value"),
+                ],
+                rows=[
+                    [
+                        q.Literal(measurement_id),
+                        q.Literal(key),
+                        q.Literal(value),
+                    ]
+                    for key, value in measurement.kwargs.items()
+                ],
+            )
+            self.cursor.execute(str(kwargs_query))
+        self.connection.commit()
 
     def get_records(self) -> RecordResult:
+        keyword_arguments_selector = q.Aggregate(
+            "GROUP_CONCAT",
+            q.ExpressionList(
+                [
+                    q.BinaryOp(
+                        "||",
+                        q.Identifier(["keyword_arguments", "key"]),
+                        q.BinaryOp(
+                            "||",
+                            q.Literal("\u001e"),
+                            q.Identifier(["keyword_arguments", "value"]),
+                        ),
+                    ),
+                    q.Literal("\u001d"),
+                ]
+            ),
+        )
         return RecordResult(
             db=self.cursor,
             mapping=self._row_to_record,
             query=q.Select(
-                selector=q.SelectorList([q.All()]),
-                from_clause=q.Identifier("measurements"),
+                selector=q.SelectorList(
+                    [
+                        q.All(),
+                        q.Alias(
+                            expression=keyword_arguments_selector,
+                            name=q.Identifier("keyword_args"),
+                        ),
+                    ]
+                ),
+                from_clause=q.Join(
+                    table=q.Identifier("measurements"),
+                    spec=[
+                        q.left(
+                            table=q.Identifier("keyword_arguments"),
+                            constraint=q.On(
+                                q.BinaryOp(
+                                    "=", q.Identifier("ID"), q.Identifier("measurement")
+                                )
+                            ),
+                        ),
+                    ],
+                ),
+                group_by=q.ExpressionList(
+                    [
+                        q.Identifier("ID"),
+                    ]
+                ),
             ),
         )
 
     def truncate(self) -> bool:
-        with self.lock:
-            statement = q.Delete(q.Identifier("measurements"))
-            self.cursor.execute(statement.as_statement())
-            self.connection.commit()
+        statement = q.Delete(q.Identifier("measurements"))
+        self.cursor.execute(statement.as_statement())
+        self.connection.commit()
         return True if self.cursor.rowcount else False
 
     def _row_to_record(self, row) -> Record:
-        raw_context = json.loads(row[7])
+        raw_context = json.loads(row["context"])
         context = RequestMetadata.from_json(raw_context)
+        keyword_arguments: Dict[str, str] = dict()
+        if row["keyword_args"]:
+            for record in row["keyword_args"].split("\u001d"):
+                try:
+                    key, value = record.split("\u001e", maxsplit=1)
+                except ValueError:
+                    continue
         return Record(
-            id=row[0],
-            startedAt=row[1],
-            endedAt=row[2],
-            elapsed=row[3],
-            args=json.loads(row[4]),
-            kwargs=json.loads(row[5]),
-            method=row[6],
+            id=row["ID"],
+            startedAt=row["startedAt"],
+            endedAt=row["endedAt"],
+            elapsed=row["elapsed"],
+            args=json.loads(row["args"]),
+            kwargs=keyword_arguments,
+            method=row["method"],
             context=context,
-            name=row[8],
+            name=row["name"],
         )
