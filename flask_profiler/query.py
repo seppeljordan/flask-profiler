@@ -51,6 +51,11 @@ class ColumnConstraint(Protocol):
         ...
 
 
+class JoinConstraint(Protocol):
+    def as_join_constraint(self) -> str:
+        ...
+
+
 # Statements
 
 
@@ -105,6 +110,9 @@ class Select:
     def as_statement(self) -> str:
         return str(self)
 
+    def as_expression(self) -> str:
+        return str(self)
+
 
 @dataclass(frozen=True)
 class Insert:
@@ -112,6 +120,7 @@ class Insert:
     rows: List[List[Expression]]
     columns: Optional[List[Identifier]] = None
     alias: Optional[Identifier] = None
+    returning: Optional[All] = None
 
     def __str__(self) -> str:
         statement = f"INSERT INTO {self.into.as_expression()} "
@@ -126,6 +135,8 @@ class Insert:
             "(" + ", ".join(value.as_expression() for value in row) + ")"
             for row in self.rows
         )
+        if self.returning:
+            statement += " RETURNING " + str(self.returning)
         return statement
 
     def as_statement(self) -> str:
@@ -341,11 +352,20 @@ null = Null()
 
 @dataclass
 class Alias:
-    expression: Query
+    expression: Expression
     name: Identifier
 
+    def __str__(self) -> str:
+        return f"({self.expression.as_expression()}) AS {self.name.as_expression()}"
+
     def as_from_clause(self) -> str:
-        return f"({self.expression.as_query()}) AS {self.name.as_expression()}"
+        return str(self)
+
+    def as_selector(self) -> str:
+        return str(self)
+
+    def as_selector_clause(self) -> str:
+        return str(self)
 
 
 @dataclass
@@ -357,8 +377,11 @@ class SelectorList:
 
 
 class All:
-    def as_selector(self) -> str:
+    def __str__(self) -> str:
         return "*"
+
+    def as_selector(self) -> str:
+        return str(self)
 
 
 @dataclass
@@ -367,7 +390,7 @@ class Aggregate:
     expression: Union[Expression, All]
     is_distinct: bool = False
 
-    def as_selector(self) -> str:
+    def __str__(self) -> str:
         result = f"{self.name}("
         if self.is_distinct:
             result += "DISTINCT "
@@ -377,3 +400,72 @@ class Aggregate:
             result += self.expression.as_expression()
         result += ")"
         return result
+
+    def as_selector(self) -> str:
+        return str(self)
+
+    def as_expression(self) -> str:
+        return str(self)
+
+
+@dataclass
+class JoinSpec:
+    operator: str
+    table: Identifier
+    constraint: JoinConstraint
+
+    def __str__(self) -> str:
+        return (
+            f"{self.operator} JOIN {self.table} {self.constraint.as_join_constraint()}"
+        )
+
+
+def left(table: Identifier, constraint: JoinConstraint) -> JoinSpec:
+    return JoinSpec(
+        operator="LEFT",
+        table=table,
+        constraint=constraint,
+    )
+
+
+def inner(table: Identifier, constraint: JoinConstraint) -> JoinSpec:
+    return JoinSpec(
+        operator="INNER",
+        table=table,
+        constraint=constraint,
+    )
+
+
+def right(table: Identifier, constraint: JoinConstraint) -> JoinSpec:
+    return JoinSpec(
+        operator="RIGHT",
+        table=table,
+        constraint=constraint,
+    )
+
+
+@dataclass
+class On:
+    expression: Expression
+
+    def __str__(self) -> str:
+        return "ON " + self.expression.as_expression()
+
+    def as_join_constraint(self) -> str:
+        return str(self)
+
+
+@dataclass
+class Join:
+    table: Identifier
+    spec: List[JoinSpec]
+
+    def __str__(self) -> str:
+        clause = str(self.table)
+        if self.spec:
+            for spec in self.spec:
+                clause += " " + str(spec)
+        return clause
+
+    def as_from_clause(self) -> str:
+        return str(self)
