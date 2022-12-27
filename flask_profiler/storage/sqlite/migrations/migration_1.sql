@@ -4,7 +4,6 @@ CREATE TABLE "measurements" (
     "startedAt" REAL,
     "endedAt" REAL,
     "elapsed" REAL,
-    "args" TEXT,
     "method" TEXT,
     "context" TEXT,
     "name" TEXT

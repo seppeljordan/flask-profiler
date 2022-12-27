@@ -4,7 +4,7 @@ from __future__ import annotations
 import functools
 import logging
 import re
-from typing import Any, Callable, Dict, Iterable, List, TypeVar, Union, cast
+from typing import Any, Callable, Dict, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
 from flask import Response as FlaskResponse
@@ -90,9 +90,9 @@ def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route
     injector = DependencyInjector()
     clock = injector.get_clock()
     config = injector.get_configuration()
-    logger.debug("{0} is being processed.")
+    logger.debug(f"{name} is being processed.")
     if is_ignored(name):
-        logger.debug("{0} is ignored.")
+        logger.debug(f"{name} is ignored.")
         return f
 
     @functools.wraps(f)
@@ -108,7 +108,6 @@ def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route
                 method=method,
                 context=context,
                 name=name,
-                args=sanatize_args(args),
                 kwargs=sanatize_kwargs(kwargs),
                 startedAt=started_at,
                 endedAt=stopped_at,
@@ -179,12 +178,7 @@ def init_app(app: Flask) -> None:
         logging.warning("flask-profiler is working without basic auth!")
 
 
-def sanatize_args(args: Iterable[Any]) -> List[str]:
-    return [str(item) for item in args]
-
-
 def sanatize_kwargs(kwargs: Dict[str, Any]) -> Dict[str, str]:
-
     for key, value in list(kwargs.items()):
         kwargs[key] = str(value)
     return kwargs

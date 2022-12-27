@@ -136,7 +136,6 @@ class Sqlite:
         endedAt = measurement.endedAt
         startedAt = measurement.startedAt
         elapsed = measurement.elapsed
-        args = json.dumps(list(measurement.args))
         context = json.dumps(measurement.context.serialize_to_json())
         method = measurement.method
         name = measurement.name
@@ -146,7 +145,6 @@ class Sqlite:
                 q.Identifier("startedAt"),
                 q.Identifier("endedAt"),
                 q.Identifier("elapsed"),
-                q.Identifier("args"),
                 q.Identifier("method"),
                 q.Identifier("context"),
                 q.Identifier("name"),
@@ -156,7 +154,6 @@ class Sqlite:
                     q.Literal(startedAt),
                     q.Literal(endedAt),
                     q.Literal(elapsed),
-                    q.Literal(args),
                     q.Literal(method),
                     q.Literal(context),
                     q.Literal(name),
@@ -187,23 +184,6 @@ class Sqlite:
         self.connection.commit()
 
     def get_records(self) -> RecordResult:
-        keyword_arguments_selector = q.Aggregate(
-            "GROUP_CONCAT",
-            q.ExpressionList(
-                [
-                    q.BinaryOp(
-                        "||",
-                        q.Identifier(["keyword_arguments", "key"]),
-                        q.BinaryOp(
-                            "||",
-                            q.Literal("\u001e"),
-                            q.Identifier(["keyword_arguments", "value"]),
-                        ),
-                    ),
-                    q.Literal("\u001d"),
-                ]
-            ),
-        )
         return RecordResult(
             db=self.cursor,
             mapping=self._row_to_record,
@@ -212,7 +192,9 @@ class Sqlite:
                     [
                         q.All(),
                         q.Alias(
-                            expression=keyword_arguments_selector,
+                            expression=concat_key_value_pairs(
+                                table="keyword_arguments"
+                            ),
                             name=q.Identifier("keyword_args"),
                         ),
                     ]
@@ -259,9 +241,28 @@ class Sqlite:
             startedAt=row["startedAt"],
             endedAt=row["endedAt"],
             elapsed=row["elapsed"],
-            args=json.loads(row["args"]),
             kwargs=keyword_arguments,
             method=row["method"],
             context=context,
             name=row["name"],
         )
+
+
+def concat_key_value_pairs(table: str, key: str = "key", value: str = "value"):
+    return q.Aggregate(
+        "GROUP_CONCAT",
+        q.ExpressionList(
+            [
+                q.BinaryOp(
+                    "||",
+                    q.Identifier([table, key]),
+                    q.BinaryOp(
+                        "||",
+                        q.Literal("\u001e"),
+                        q.Identifier([table, value]),
+                    ),
+                ),
+                q.Literal("\u001d"),
+            ]
+        ),
+    )
