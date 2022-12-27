@@ -51,7 +51,7 @@ def verify_password(username, password):
         and password == config.basic_auth_password
     ):
         return True
-    logging.info("flask-profiler authentication failed")
+    logger.info("flask-profiler authentication failed")
     return False
 
 
@@ -98,7 +98,6 @@ def measure(
     args,
     kwargs,
 ) -> ResponseT:
-    logger.debug(f"{url_rule} is being processed.")
     if is_ignored(url_rule) or not config.sampling_function():
         return f(*args, **kwargs)
     started_at = clock.get_epoch()
@@ -175,4 +174,4 @@ def init_app(app: Flask) -> None:
     wrap_all_routes(app)
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:
-        logging.warning("flask-profiler is working without basic auth!")
+        logger.warning("flask-profiler is working without basic auth!")

@@ -4,17 +4,19 @@ from typing import List
 
 from flask import Flask, g
 
-from .storage.base import BaseStorage
-from .storage.sqlite import Sqlite
-from .use_cases.measurement_archive import Measurement
+from .sqlite import Sqlite
+from .use_cases import measurement_archive
 
 
 class DeferredArchivist:
     def __init__(self, configuration: Configuration) -> None:
         self.configuration = configuration
 
-    def record_measurement(self, measurement: Measurement) -> None:
+    def record_measurement(self, measurement: measurement_archive.Measurement) -> None:
         self.configuration.collection.record_measurement(measurement)
+
+    def get_records(self) -> measurement_archive.RecordedMeasurements:
+        return self.configuration.collection.get_records()
 
 
 class Configuration:
@@ -63,14 +65,14 @@ class Configuration:
         return self.read_config()["basicAuth"]["password"]
 
     @property
-    def collection(self) -> BaseStorage:
+    def collection(self) -> measurement_archive.MeasurementArchivist:
         collection = g.get("flask_profiler_collection")
         if collection is None:
             collection = self._create_storage()
             g.flask_profiler_collection = collection
         return collection
 
-    def _create_storage(self) -> BaseStorage:
+    def _create_storage(self) -> measurement_archive.MeasurementArchivist:
         conf = self.read_config().get("storage", {})
         return Sqlite(
             sqlite_file=conf.get("FILE", "flask_profiler.sql"),

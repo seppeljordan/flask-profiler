@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 
-from flask_profiler.configuration import Configuration
+from . import measurement_archive
 
 
 @dataclass
@@ -30,10 +30,10 @@ class GetDetailsUseCase:
         request: GetDetailsUseCase.Request
         total_result_count: int
 
-    configuration: Configuration
+    archivist: measurement_archive.MeasurementArchivist
 
     def get_details(self, request: Request) -> Response:
-        results = self.configuration.collection.get_records()
+        results = self.archivist.get_records()
         if request.method_filter is not None:
             results = results.with_method(request.method_filter)
         if request.name_filter is not None:

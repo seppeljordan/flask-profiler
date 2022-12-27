@@ -8,7 +8,6 @@ from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 
 from flask_profiler import query as q
-from flask_profiler.storage.base import Record, Summary
 from flask_profiler.use_cases import measurement_archive as interface
 
 from .migrations import Migrations
@@ -53,10 +52,10 @@ class SelectQuery(Generic[T]):
         return self._with_modified_query(lambda query: query.offset(n))
 
 
-class RecordResult(SelectQuery[Record]):
-    def summarize(self) -> SelectQuery[Summary]:
+class RecordResult(SelectQuery[interface.Record]):
+    def summarize(self) -> SelectQuery[interface.Summary]:
         return replace(
-            cast(SelectQuery[Summary], self),
+            cast(SelectQuery[interface.Summary], self),
             query=q.Select(
                 selector=q.SelectorList(
                     [
@@ -88,7 +87,7 @@ class RecordResult(SelectQuery[Record]):
                     ]
                 ),
             ),
-            mapping=lambda row: Summary(
+            mapping=lambda row: interface.Summary(
                 method=row["method"],
                 name=row["route_name"],
                 count=row["count"],
@@ -179,14 +178,8 @@ class Sqlite:
             ),
         )
 
-    def truncate(self) -> bool:
-        statement = q.Delete(q.Identifier("measurements"))
-        self.cursor.execute(statement.as_statement())
-        self.connection.commit()
-        return True if self.cursor.rowcount else False
-
-    def _row_to_record(self, row) -> Record:
-        return Record(
+    def _row_to_record(self, row) -> interface.Record:
+        return interface.Record(
             id=row["ID"],
             startedAt=row["start_timestamp"],
             endedAt=row["end_timestamp"],
