@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Dict, Generic, Iterator, List, Protocol, TypeVar
+from typing import Any, Dict, Generic, Iterator, Protocol, TypeVar
 
 QueryResultT = TypeVar("QueryResultT", bound="QueryResult")
 T = TypeVar("T", covariant=True)
@@ -32,30 +32,6 @@ class BaseStorage(Protocol):
 
     def truncate(self) -> bool:
         ...
-
-
-@enum.unique
-class RecordSortColumn(enum.Enum):
-    method = enum.auto()
-    route_name = enum.auto()
-    started_at = enum.auto()
-    elapsed = enum.auto()
-
-
-@enum.unique
-class SummarySortColumn(enum.Enum):
-    method = enum.auto()
-    route_name = enum.auto()
-    count = enum.auto()
-    average_elapsed = enum.auto()
-    min_elapsed = enum.auto()
-    max_elapsed = enum.auto()
-
-
-@enum.unique
-class SortDirection(enum.Enum):
-    ascending = enum.auto()
-    descending = enum.auto()
 
 
 @dataclass(kw_only=True)
@@ -101,7 +77,6 @@ class Measurement:
     context: RequestMetadata
     name: str
     method: str
-    args: List[str]
     kwargs: Dict[str, str]
     startedAt: float
     endedAt: float
@@ -109,7 +84,6 @@ class Measurement:
     def serialize_to_json(self):
         return {
             "name": self.name,
-            "args": self.args,
             "kwargs": self.kwargs,
             "method": self.method,
             "startedAt": self.startedAt,
@@ -136,7 +110,6 @@ class Record:
     startedAt: float
     endedAt: float
     elapsed: float
-    args: List[str]
     kwargs: Dict[str, Any]
     method: str
     context: RequestMetadata
