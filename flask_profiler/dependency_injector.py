@@ -5,13 +5,14 @@ from typing import Optional
 from flask import Flask, current_app
 
 from .clock import SystemClock
-from .configuration import Configuration
+from .configuration import Configuration, DeferredArchivist
 from .controllers.get_details_controller import GetDetailsController
 from .controllers.get_summary_controller import GetSummaryController
 from .presenters.get_details_presenter import GetDetailsPresenter
 from .presenters.get_summary_presenter import GetSummaryPresenter
 from .use_cases.get_details_use_case import GetDetailsUseCase
 from .use_cases.get_summary_use_case import GetSummaryUseCase
+from .use_cases.record_measurement import RecordMeasurementUseCase
 from .views.get_details_view import GetDetailsView
 from .views.get_summary_view import GetSummaryView
 
@@ -59,3 +60,8 @@ class DependencyInjector:
 
     def get_details_view(self) -> GetDetailsView:
         return GetDetailsView()
+
+    def get_record_measurement_use_case(self) -> RecordMeasurementUseCase:
+        return RecordMeasurementUseCase(
+            archive=DeferredArchivist(self.get_configuration()),
+        )

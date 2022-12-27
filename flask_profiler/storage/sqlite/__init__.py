@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import json
 import logging
 import sqlite3
 from dataclasses import dataclass, replace
 from datetime import datetime
 from sqlite3 import Cursor
-from typing import Any, Callable, Dict, Generic, Iterator, TypeVar, cast
+from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 
 from flask_profiler import query as q
-from flask_profiler.storage.base import Measurement, Record, RequestMetadata, Summary
+from flask_profiler.storage.base import Record, Summary
+from flask_profiler.use_cases import measurement_archive as interface
 
 from .migrations import Migrations
 
@@ -61,7 +61,7 @@ class RecordResult(SelectQuery[Record]):
                 selector=q.SelectorList(
                     [
                         q.Identifier("method"),
-                        q.Identifier("name"),
+                        q.Identifier("route_name"),
                         q.Alias(
                             q.Aggregate("COUNT", q.Identifier("id")),
                             q.Identifier("count"),
@@ -84,13 +84,13 @@ class RecordResult(SelectQuery[Record]):
                 group_by=q.ExpressionList(
                     [
                         q.Identifier("method"),
-                        q.Identifier("name"),
+                        q.Identifier("route_name"),
                     ]
                 ),
             ),
             mapping=lambda row: Summary(
                 method=row["method"],
-                name=row["name"],
+                name=row["route_name"],
                 count=row["count"],
                 min_elapsed=row["min"],
                 max_elapsed=row["max"],
@@ -108,14 +108,18 @@ class RecordResult(SelectQuery[Record]):
     def with_name_containing(self, substring: str) -> RecordResult:
         return self._with_modified_query(
             lambda query: query.and_where(
-                q.BinaryOp("LIKE", q.Identifier("name"), q.Literal(f"%{substring}%"))
+                q.BinaryOp(
+                    "LIKE", q.Identifier("route_name"), q.Literal(f"%{substring}%")
+                )
             )
         )
 
     def requested_after(self, t: datetime) -> RecordResult:
         return self._with_modified_query(
             lambda query: query.and_where(
-                q.BinaryOp(">=", q.Identifier("startedAt"), q.Literal(t.timestamp()))
+                q.BinaryOp(
+                    ">=", q.Identifier("start_timestamp"), q.Literal(t.timestamp())
+                )
             )
         )
 
@@ -132,55 +136,25 @@ class Sqlite:
         migrations = Migrations(self.connection)
         migrations.run_necessary_migrations()
 
-    def insert(self, measurement: Measurement) -> None:
-        endedAt = measurement.endedAt
-        startedAt = measurement.startedAt
-        elapsed = measurement.elapsed
-        context = json.dumps(measurement.context.serialize_to_json())
-        method = measurement.method
-        name = measurement.name
+    def record_measurement(self, measurement: interface.Measurement) -> None:
         query = q.Insert(
             into=q.Identifier("measurements"),
             columns=[
-                q.Identifier("startedAt"),
-                q.Identifier("endedAt"),
-                q.Identifier("elapsed"),
+                q.Identifier("route_name"),
+                q.Identifier("start_timestamp"),
+                q.Identifier("end_timestamp"),
                 q.Identifier("method"),
-                q.Identifier("context"),
-                q.Identifier("name"),
             ],
             rows=[
                 [
-                    q.Literal(startedAt),
-                    q.Literal(endedAt),
-                    q.Literal(elapsed),
-                    q.Literal(method),
-                    q.Literal(context),
-                    q.Literal(name),
+                    q.Literal(measurement.route_name),
+                    q.Literal(measurement.start_timestamp.timestamp()),
+                    q.Literal(measurement.end_timestamp.timestamp()),
+                    q.Literal(measurement.method),
                 ]
             ],
-            returning=q.All(),
         )
-        result = self.cursor.execute(str(query))
-        measurement_id = result.fetchone()[0]
-        if measurement.kwargs:
-            kwargs_query = q.Insert(
-                into=q.Identifier("keyword_arguments"),
-                columns=[
-                    q.Identifier("measurement"),
-                    q.Identifier("key"),
-                    q.Identifier("value"),
-                ],
-                rows=[
-                    [
-                        q.Literal(measurement_id),
-                        q.Literal(key),
-                        q.Literal(value),
-                    ]
-                    for key, value in measurement.kwargs.items()
-                ],
-            )
-            self.cursor.execute(str(kwargs_query))
+        self.cursor.execute(str(query))
         self.connection.commit()
 
     def get_records(self) -> RecordResult:
@@ -192,31 +166,16 @@ class Sqlite:
                     [
                         q.All(),
                         q.Alias(
-                            expression=concat_key_value_pairs(
-                                table="keyword_arguments"
+                            expression=q.BinaryOp(
+                                "-",
+                                q.Identifier("end_timestamp"),
+                                q.Identifier("start_timestamp"),
                             ),
-                            name=q.Identifier("keyword_args"),
+                            name=q.Identifier("elapsed"),
                         ),
                     ]
                 ),
-                from_clause=q.Join(
-                    table=q.Identifier("measurements"),
-                    spec=[
-                        q.left(
-                            table=q.Identifier("keyword_arguments"),
-                            constraint=q.On(
-                                q.BinaryOp(
-                                    "=", q.Identifier("ID"), q.Identifier("measurement")
-                                )
-                            ),
-                        ),
-                    ],
-                ),
-                group_by=q.ExpressionList(
-                    [
-                        q.Identifier("ID"),
-                    ]
-                ),
+                from_clause=q.Identifier("measurements"),
             ),
         )
 
@@ -227,42 +186,11 @@ class Sqlite:
         return True if self.cursor.rowcount else False
 
     def _row_to_record(self, row) -> Record:
-        raw_context = json.loads(row["context"])
-        context = RequestMetadata.from_json(raw_context)
-        keyword_arguments: Dict[str, str] = dict()
-        if row["keyword_args"]:
-            for record in row["keyword_args"].split("\u001d"):
-                try:
-                    key, value = record.split("\u001e", maxsplit=1)
-                except ValueError:
-                    continue
         return Record(
             id=row["ID"],
-            startedAt=row["startedAt"],
-            endedAt=row["endedAt"],
+            startedAt=row["start_timestamp"],
+            endedAt=row["end_timestamp"],
             elapsed=row["elapsed"],
-            kwargs=keyword_arguments,
             method=row["method"],
-            context=context,
-            name=row["name"],
+            name=row["route_name"],
         )
-
-
-def concat_key_value_pairs(table: str, key: str = "key", value: str = "value"):
-    return q.Aggregate(
-        "GROUP_CONCAT",
-        q.ExpressionList(
-            [
-                q.BinaryOp(
-                    "||",
-                    q.Identifier([table, key]),
-                    q.BinaryOp(
-                        "||",
-                        q.Literal("\u001e"),
-                        q.Identifier([table, value]),
-                    ),
-                ),
-                q.Literal("\u001d"),
-            ]
-        ),
-    )
