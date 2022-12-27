@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any, Dict, Generic, Iterator, Protocol, TypeVar
