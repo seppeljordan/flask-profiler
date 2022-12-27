@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Generic, Iterator, Protocol, TypeVar
+from typing import Any, Generic, Iterator, Protocol, TypeVar
+
+from flask_profiler.use_cases.measurement_archive import MeasurementArchivist
 
 QueryResultT = TypeVar("QueryResultT", bound="QueryResult")
 T = TypeVar("T", covariant=True)
@@ -22,48 +24,12 @@ class QueryResult(Protocol, Generic[T]):
         ...
 
 
-class BaseStorage(Protocol):
+class BaseStorage(MeasurementArchivist, Protocol):
     def get_records(self) -> RecordResult:
-        ...
-
-    def insert(self, measurement: Measurement) -> None:
         ...
 
     def truncate(self) -> bool:
         ...
-
-
-@dataclass(kw_only=True)
-class RequestMetadata:
-    url: str
-    args: Dict[str, str]
-    form: Dict[str, str]
-    headers: Dict[str, str]
-    endpoint_name: str
-    client_address: str
-
-    def serialize_to_json(self) -> Dict[str, Any]:
-        return asdict(self)
-
-    @classmethod
-    def from_json(cls, json_object: Any) -> RequestMetadata:
-        if json_object.get("endpoint_name") is not None:
-            endpoint_name = json_object["endpoint_name"]
-        else:
-            endpoint_name = json_object["func"]
-
-        if json_object.get("client_address") is not None:
-            client_address = json_object["client_address"]
-        else:
-            client_address = json_object["ip"]
-        return cls(
-            url=json_object["url"],
-            args=json_object["args"],
-            form=json_object["form"],
-            headers=json_object["headers"],
-            endpoint_name=endpoint_name,
-            client_address=client_address,
-        )
 
 
 DECIMAL_PLACES = 6
@@ -73,22 +39,18 @@ DECIMAL_PLACES = 6
 class Measurement:
     """represents an endpoint measurement"""
 
-    context: RequestMetadata
     name: str
     method: str
-    kwargs: Dict[str, str]
     startedAt: float
     endedAt: float
 
-    def serialize_to_json(self):
+    def serialize_to_json(self) -> Any:
         return {
             "name": self.name,
-            "kwargs": self.kwargs,
             "method": self.method,
             "startedAt": self.startedAt,
             "endedAt": self.endedAt,
             "elapsed": self.elapsed,
-            "context": self.context.serialize_to_json(),
         }
 
     def __str__(self):
@@ -109,9 +71,7 @@ class Record:
     startedAt: float
     endedAt: float
     elapsed: float
-    kwargs: Dict[str, Any]
     method: str
-    context: RequestMetadata
 
 
 class RecordResult(QueryResult[Record], Protocol):

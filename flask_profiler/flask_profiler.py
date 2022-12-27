@@ -1,20 +1,22 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import functools
 import logging
 import re
-from typing import Any, Callable, Dict, TypeVar, Union, cast
+from datetime import datetime
+from typing import Callable, TypeVar, Union, cast
 
 from flask import Blueprint, Flask
 from flask import Response as FlaskResponse
 from flask import request
 from flask_httpauth import HTTPBasicAuth
 
+from .clock import Clock
+from .configuration import Configuration
 from .dependency_injector import DependencyInjector
 from .request import WrappedRequest
 from .response import HttpResponse
-from .storage.base import Measurement, RequestMetadata
+from .use_cases import record_measurement
 
 ResponseT = Union[str, FlaskResponse]
 logger = logging.getLogger("flask-profiler")
@@ -86,55 +88,55 @@ def is_ignored(name: str) -> bool:
     return False
 
 
-def measure(f: Route, name: str, method: str, context: RequestMetadata) -> Route:
-    injector = DependencyInjector()
-    clock = injector.get_clock()
-    config = injector.get_configuration()
-    logger.debug(f"{name} is being processed.")
-    if is_ignored(name):
-        logger.debug(f"{name} is ignored.")
-        return f
+def measure(
+    f: Route,
+    use_case: record_measurement.RecordMeasurementUseCase,
+    clock: Clock,
+    config: Configuration,
+    url_rule: str,
+    method: str,
+    args,
+    kwargs,
+) -> ResponseT:
+    logger.debug(f"{url_rule} is being processed.")
+    if is_ignored(url_rule) or not config.sampling_function():
+        return f(*args, **kwargs)
+    started_at = clock.get_epoch()
+    try:
+        response = f(*args, **kwargs)
+    finally:
+        stopped_at = clock.get_epoch()
+        use_case.record_measurement(
+            record_measurement.Request(
+                route_name=str(request.endpoint),
+                start_timestamp=datetime.fromtimestamp(started_at),
+                end_timestamp=datetime.fromtimestamp(stopped_at),
+                method=method,
+            )
+        )
+    return response
 
+
+def wrap_route(
+    f: Route,
+    clock: Clock,
+    use_case: record_measurement.RecordMeasurementUseCase,
+    config: Configuration,
+) -> Route:
     @functools.wraps(f)
     def wrapper(*args, **kwargs) -> ResponseT:
-        if not config.sampling_function():
-            return f(*args, **kwargs)
-        started_at = clock.get_epoch()
-        try:
-            response = f(*args, **kwargs)
-        finally:
-            stopped_at = clock.get_epoch()
-            measurement = Measurement(
-                method=method,
-                context=context,
-                name=name,
-                kwargs=sanatize_kwargs(kwargs),
-                startedAt=started_at,
-                endedAt=stopped_at,
-            )
-            logger.debug(str(measurement.serialize_to_json()))
-            config.collection.insert(measurement)
-        return response
+        return measure(
+            f,
+            url_rule=str(request.url_rule),
+            use_case=use_case,
+            method=request.method,
+            clock=clock,
+            args=args,
+            kwargs=kwargs,
+            config=config,
+        )
 
     return cast(Route, wrapper)
-
-
-def wrap_route(f):
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        context = RequestMetadata(
-            url=request.base_url,
-            args=dict(request.args.items()),
-            form=dict(request.form.items()),
-            headers=dict(request.headers.items()),
-            endpoint_name=request.endpoint,
-            client_address=request.remote_addr,
-        )
-        endpoint_name = str(request.url_rule)
-        wrapped = measure(f, endpoint_name, request.method, context)
-        return wrapped(*args, **kwargs)
-
-    return wrapper
 
 
 def wrap_all_routes(app):
@@ -145,19 +147,17 @@ def wrap_all_routes(app):
     :param app: Flask application instance
     :return:
     """
+    injector = DependencyInjector()
+    clock = injector.get_clock()
+    use_case = injector.get_record_measurement_use_case()
+    config = injector.get_configuration()
     for endpoint, func in app.view_functions.items():
-        app.view_functions[endpoint] = wrap_route(func)
-
-
-def profile():
-    """
-    http endpoint decorator
-    """
-
-    def wrapper(f):
-        return wrap_route(f)
-
-    return wrapper
+        app.view_functions[endpoint] = wrap_route(
+            func,
+            clock=clock,
+            use_case=use_case,
+            config=config,
+        )
 
 
 def init_app(app: Flask) -> None:
@@ -176,9 +176,3 @@ def init_app(app: Flask) -> None:
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:
         logging.warning("flask-profiler is working without basic auth!")
-
-
-def sanatize_kwargs(kwargs: Dict[str, Any]) -> Dict[str, str]:
-    for key, value in list(kwargs.items()):
-        kwargs[key] = str(value)
-    return kwargs

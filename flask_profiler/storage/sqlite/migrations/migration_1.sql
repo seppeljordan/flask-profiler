@@ -1,25 +1,13 @@
 BEGIN TRANSACTION;
 CREATE TABLE "measurements" (
     "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "startedAt" REAL,
-    "endedAt" REAL,
-    "elapsed" REAL,
-    "method" TEXT,
-    "context" TEXT,
-    "name" TEXT
+    "route_name" TEXT,
+    "start_timestamp" REAL,
+    "end_timestamp" REAL,
+    "method" TEXT
 );
 CREATE INDEX "measurement_index" ON "measurements" (
-    "startedAt", "name", "method"
-);
-CREATE TABLE "keyword_arguments" (
-    "measurement" INTEGER,
-    "key" TEXT,
-    "value" TEXT,
-    PRIMARY KEY("measurement", "key"),
-    FOREIGN KEY("measurement") REFERENCES "measurements"("ID") ON DELETE CASCADE
-);
-CREATE INDEX "keyword_argument_index" ON "keyword_arguments" (
-    "measurement", "key", "value"
+    "start_timestamp", "name", "method"
 );
 PRAGMA user_version = 1;
 COMMIT TRANSACTION;

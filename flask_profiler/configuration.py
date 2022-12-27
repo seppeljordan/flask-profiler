@@ -1,9 +1,20 @@
+from __future__ import annotations
+
 from typing import List
 
 from flask import Flask, g
 
 from .storage.base import BaseStorage
 from .storage.sqlite import Sqlite
+from .use_cases.measurement_archive import Measurement
+
+
+class DeferredArchivist:
+    def __init__(self, configuration: Configuration) -> None:
+        self.configuration = configuration
+
+    def record_measurement(self, measurement: Measurement) -> None:
+        self.configuration.collection.record_measurement(measurement)
 
 
 class Configuration:
