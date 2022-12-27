@@ -28,9 +28,7 @@ class DependencyInjector:
         return Configuration(self.app)
 
     def get_summary_use_case(self) -> GetSummaryUseCase:
-        return GetSummaryUseCase(
-            configuration=self.get_configuration(),
-        )
+        return GetSummaryUseCase(archivist=self.get_measurement_archivist())
 
     def get_summary_controller(self) -> GetSummaryController:
         return GetSummaryController(
@@ -53,7 +51,7 @@ class DependencyInjector:
         )
 
     def get_details_use_case(self) -> GetDetailsUseCase:
-        return GetDetailsUseCase(configuration=self.get_configuration())
+        return GetDetailsUseCase(archivist=self.get_measurement_archivist())
 
     def get_details_presenter(self) -> GetDetailsPresenter:
         return GetDetailsPresenter()
@@ -63,5 +61,8 @@ class DependencyInjector:
 
     def get_record_measurement_use_case(self) -> RecordMeasurementUseCase:
         return RecordMeasurementUseCase(
-            archive=DeferredArchivist(self.get_configuration()),
+            archive=self.get_measurement_archivist(),
         )
+
+    def get_measurement_archivist(self) -> DeferredArchivist:
+        return DeferredArchivist(self.get_configuration())

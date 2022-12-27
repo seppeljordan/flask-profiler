@@ -1,7 +1,7 @@
 import sqlite3
 from unittest import TestCase
 
-from flask_profiler.storage.sqlite.migrations import Migrations
+from flask_profiler.sqlite.migrations import Migrations
 
 
 class MigrationTests(TestCase):
