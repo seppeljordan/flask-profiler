@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -18,3 +18,4 @@ class Header:
 @dataclass
 class Cell:
     text: str
+    link_target: Optional[str] = None

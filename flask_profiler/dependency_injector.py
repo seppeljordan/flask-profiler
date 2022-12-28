@@ -8,6 +8,7 @@ from .clock import SystemClock
 from .configuration import Configuration, DeferredArchivist
 from .controllers.get_details_controller import GetDetailsController
 from .controllers.get_summary_controller import GetSummaryController
+from .measured_route import MeasuredRouteFactory
 from .presenters.get_details_presenter import GetDetailsPresenter
 from .presenters.get_summary_presenter import GetSummaryPresenter
 from .use_cases.get_details_use_case import GetDetailsUseCase
@@ -66,3 +67,10 @@ class DependencyInjector:
 
     def get_measurement_archivist(self) -> DeferredArchivist:
         return DeferredArchivist(self.get_configuration())
+
+    def get_measured_route_factory(self) -> MeasuredRouteFactory:
+        return MeasuredRouteFactory(
+            use_case=self.get_record_measurement_use_case(),
+            clock=self.get_clock(),
+            config=self.get_configuration(),
+        )

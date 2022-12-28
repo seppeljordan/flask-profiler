@@ -1,3 +1,13 @@
+{% macro render_cell(cell) %}
+<td>
+    {% if cell.link_target %}
+    <a href="{{ cell.link_target }}">{{ cell.text }}</a>
+    {% else %}
+    {{ cell.text }}
+    {% endif %}
+</td>
+{% endmacro %}
+
 {% macro render_table(table) %}
 <table>
     <thead>
@@ -9,9 +19,7 @@
 	{% for row in table.rows %}
 	<tr>
 	    {% for cell in row %}
-	    <td>
-		{{ cell.text }}
-	    </td>
+	    {{ render_cell(cell) }}
 	    {% endfor %}
 	</tr>
 	{% endfor %}
