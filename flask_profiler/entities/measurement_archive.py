@@ -64,6 +64,9 @@ class RecordedMeasurements(FiledData[Record], Protocol):
     def requested_after(self, t: datetime) -> RecordedMeasurements:
         ...
 
+    def requested_before(self, t: datetime) -> RecordedMeasurements:
+        ...
+
 
 @dataclass(kw_only=True)
 class Summary:

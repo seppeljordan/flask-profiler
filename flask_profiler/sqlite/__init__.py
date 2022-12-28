@@ -122,6 +122,15 @@ class RecordResult(SelectQuery[interface.Record]):
             )
         )
 
+    def requested_before(self, t: datetime) -> RecordResult:
+        return self._with_modified_query(
+            lambda query: query.and_where(
+                q.BinaryOp(
+                    "<", q.Identifier("start_timestamp"), q.Literal(t.timestamp())
+                )
+            )
+        )
+
 
 class Sqlite:
     def __init__(self, sqlite_file: str) -> None:

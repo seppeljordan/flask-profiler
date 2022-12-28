@@ -25,6 +25,7 @@ class GetDetailsController(Controller):
             limit=pagination_context.get_limit(),
             offset=pagination_context.get_offset(),
             requested_after=form_data.requested_after,
+            requested_before=form_data.requested_before,
             name_filter=form_data.name,
             method_filter=form_data.method,
         )

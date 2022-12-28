@@ -55,20 +55,24 @@ class FilterFormData:
     name: Optional[str]
     method: Optional[str]
     requested_after: Optional[datetime]
+    requested_before: Optional[datetime]
 
     @classmethod
     def parse_from_from(self, args: Dict[str, str]) -> FilterFormData:
-        datetime_field = OptionalDatetimeField(name="requested_after")
+        requested_after_field = OptionalDatetimeField(name="requested_after")
+        requested_before_field = OptionalDatetimeField(name="requested_before")
         method_field = OptionalStringField(
             name="method",
             normalize=lambda x: x.upper(),
         )
         name_field = OptionalStringField(name="name")
-        datetime_field.parse_value(form=args)
+        requested_after_field.parse_value(form=args)
+        requested_before_field.parse_value(form=args)
         method_field.parse_value(form=args)
         name_field.parse_value(form=args)
         return FilterFormData(
             method=method_field.get_value(),
-            requested_after=datetime_field.get_value(),
+            requested_after=requested_after_field.get_value(),
+            requested_before=requested_before_field.get_value(),
             name=name_field.get_value(),
         )

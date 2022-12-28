@@ -70,6 +70,11 @@ class RecordedMeasurements(IteratorBasedData[Record]):
             self, items=lambda: filter(lambda i: t <= i.start_timestamp, self.items())
         )
 
+    def requested_before(self, t: datetime) -> RecordedMeasurements:
+        return replace(
+            self, items=lambda: filter(lambda i: t > i.start_timestamp, self.items())
+        )
+
     def summarize(self) -> SummarizedMeasurements:
         return SummarizedMeasurements(
             items=lambda: iter(SummaryBuilder.from_iterator(self.items()))
