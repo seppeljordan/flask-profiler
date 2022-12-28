@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 
-from . import measurement_archive
+from flask_profiler.entities import measurement_archive
 
 
 @dataclass

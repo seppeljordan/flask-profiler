@@ -8,7 +8,7 @@ from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 
 from flask_profiler import query as q
-from flask_profiler.use_cases import measurement_archive as interface
+from flask_profiler.entities import measurement_archive as interface
 
 from .migrations import Migrations
 

@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
+from flask_profiler.entities.request_handler import RequestHandler
 from flask_profiler.use_cases.observe_request_handling_use_case import (
     ObserveRequestHandlingUseCase,
 )
-from flask_profiler.use_cases.request_handler import RequestHandler
 from tests.clock import FakeClock
 
 from .measurement_archive import FakeMeasurementArchivist
