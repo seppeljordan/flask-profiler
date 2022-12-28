@@ -29,6 +29,7 @@ class RouteWrapper:
                 endpoint
             ] = self.measured_route_factory.create_measured_route(
                 original_route=func,
+                route_name=endpoint,
             )
 
 
