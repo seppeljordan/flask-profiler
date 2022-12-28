@@ -13,7 +13,6 @@ from .presenters.get_details_presenter import GetDetailsPresenter
 from .presenters.get_summary_presenter import GetSummaryPresenter
 from .use_cases.get_details_use_case import GetDetailsUseCase
 from .use_cases.get_summary_use_case import GetSummaryUseCase
-from .use_cases.observe_request_handling_use_case import ObserveRequestHandlingUseCase
 from .views.get_details_view import GetDetailsView
 from .views.get_summary_view import GetSummaryView
 
