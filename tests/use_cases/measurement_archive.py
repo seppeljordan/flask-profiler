@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable, Dict, Generic, Iterator, List, TypeVar
 
-from flask_profiler.use_cases.measurement_archive import Measurement, Record, Summary
+from flask_profiler.entities.measurement_archive import Measurement, Record, Summary
 
 T = TypeVar("T")
 IteratorBasedDataT = TypeVar("IteratorBasedDataT", bound="IteratorBasedData")

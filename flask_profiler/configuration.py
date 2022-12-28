@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from flask import Flask, g
 
+from .entities import measurement_archive
 from .sqlite import Sqlite
-from .use_cases import measurement_archive
 
 
 class DeferredArchivist:

@@ -9,8 +9,8 @@ from flask import request
 
 from .clock import Clock
 from .configuration import Configuration
+from .entities.measurement_archive import MeasurementArchivist
 from .use_cases import observe_request_handling_use_case as use_case
-from .use_cases.measurement_archive import MeasurementArchivist
 
 ResponseT = Union[str, FlaskResponse]
 logger = logging.getLogger("flask-profiler")

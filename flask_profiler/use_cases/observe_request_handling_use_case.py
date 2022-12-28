@@ -4,9 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from flask_profiler.clock import Clock
-
-from .measurement_archive import Measurement, MeasurementArchivist
-from .request_handler import RequestHandler
+from flask_profiler.entities.measurement_archive import (
+    Measurement,
+    MeasurementArchivist,
+)
+from flask_profiler.entities.request_handler import RequestHandler
 
 
 @dataclass
