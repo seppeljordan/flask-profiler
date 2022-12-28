@@ -25,6 +25,7 @@ class GetDetailsPresenter:
         method_filter_text: str
         name_filter_text: str
         requested_after_filter_text: str
+        requested_before_filter_text: str
 
     def render_details(
         self,
@@ -60,4 +61,7 @@ class GetDetailsPresenter:
             requested_after_filter_text=""
             if response.request.requested_after is None
             else response.request.requested_after.isoformat(),
+            requested_before_filter_text=""
+            if response.request.requested_before is None
+            else response.request.requested_before.isoformat(),
         )

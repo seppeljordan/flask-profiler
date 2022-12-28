@@ -14,4 +14,6 @@ class FakeClock:
             self.frozen_time += dt
 
     def utc_now(self) -> datetime:
+        if self.frozen_time:
+            return self.frozen_time
         return datetime.now(tz=timezone.utc)

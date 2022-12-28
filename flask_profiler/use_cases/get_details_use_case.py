@@ -22,6 +22,7 @@ class Request:
     name_filter: Optional[str] = None
     method_filter: Optional[str] = None
     requested_after: Optional[datetime] = None
+    requested_before: Optional[datetime] = None
 
 
 @dataclass
@@ -43,6 +44,8 @@ class GetDetailsUseCase:
             results = results.with_name_containing(request.name_filter)
         if request.requested_after is not None:
             results = results.requested_after(request.requested_after)
+        if request.requested_before is not None:
+            results = results.requested_before(request.requested_before)
         total_result_count = len(results)
         results = results.offset(request.offset).limit(request.limit)
         return Response(
