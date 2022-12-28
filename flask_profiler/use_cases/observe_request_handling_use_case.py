@@ -14,7 +14,6 @@ class Request:
     request_args: Any
     request_kwargs: Any
     method: str
-    route_name: str
 
 
 @dataclass
@@ -31,7 +30,7 @@ class ObserveRequestHandlingUseCase:
         end_timestamp = self.clock.utc_now()
         self.archivist.record_measurement(
             Measurement(
-                route_name=request.route_name,
+                route_name=self.request_handler.name(),
                 start_timestamp=start_timestamp,
                 end_timestamp=end_timestamp,
                 method=request.method,

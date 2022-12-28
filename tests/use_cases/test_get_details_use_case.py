@@ -24,6 +24,14 @@ class UseCaseTests(TestCase):
         response = self.use_case.get_details(request)
         assert response.total_result_count == 1
 
+    def test_with_three_request_recorded_total_result_count_is_3(self) -> None:
+        self.record_request()
+        self.record_request()
+        self.record_request()
+        request = use_case.Request(limit=10, offset=10)
+        response = self.use_case.get_details(request)
+        assert response.total_result_count == 3
+
     def record_request(self) -> None:
         request_handler = self.request_handler_factory.create_request_handler()
         observe_request_use_case = (
@@ -36,6 +44,5 @@ class UseCaseTests(TestCase):
                 request_args=tuple(),
                 request_kwargs=dict(),
                 method="GET",
-                route_name="test_route_name",
             )
         )
