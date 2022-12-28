@@ -8,7 +8,7 @@ from flask import Request
 
 class HttpRequest(Protocol):
     def get_arguments(self) -> Dict[str, str]:
-        pass
+        ...
 
 
 @dataclass(frozen=True)

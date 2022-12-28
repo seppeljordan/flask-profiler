@@ -42,10 +42,13 @@ class FiledData(Protocol, Generic[T]):
 class Record:
     id: int
     name: str
-    startedAt: float
-    endedAt: float
-    elapsed: float
+    start_timestamp: datetime
+    end_timestamp: datetime
     method: str
+
+    @property
+    def elapsed(self) -> float:
+        return self.end_timestamp.timestamp() - self.start_timestamp.timestamp()
 
 
 class RecordedMeasurements(FiledData[Record], Protocol):

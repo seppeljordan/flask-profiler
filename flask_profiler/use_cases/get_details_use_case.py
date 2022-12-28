@@ -8,28 +8,31 @@ from . import measurement_archive
 
 
 @dataclass
+class Measurement:
+    name: str
+    method: str
+    response_time_secs: float
+    started_at: datetime
+
+
+@dataclass
+class Request:
+    limit: int
+    offset: int
+    name_filter: Optional[str] = None
+    method_filter: Optional[str] = None
+    requested_after: Optional[datetime] = None
+
+
+@dataclass
+class Response:
+    measurements: List[Measurement]
+    request: Request
+    total_result_count: int
+
+
+@dataclass
 class GetDetailsUseCase:
-    @dataclass
-    class Measurement:
-        name: str
-        method: str
-        response_time_secs: float
-        started_at: datetime
-
-    @dataclass
-    class Request:
-        limit: int
-        offset: int
-        name_filter: Optional[str] = None
-        method_filter: Optional[str] = None
-        requested_after: Optional[datetime] = None
-
-    @dataclass
-    class Response:
-        measurements: List[GetDetailsUseCase.Measurement]
-        request: GetDetailsUseCase.Request
-        total_result_count: int
-
     archivist: measurement_archive.MeasurementArchivist
 
     def get_details(self, request: Request) -> Response:
@@ -42,13 +45,13 @@ class GetDetailsUseCase:
             results = results.requested_after(request.requested_after)
         total_result_count = len(results)
         results = results.offset(request.offset).limit(request.limit)
-        return self.Response(
+        return Response(
             measurements=[
-                self.Measurement(
+                Measurement(
                     name=measurement.name,
                     method=measurement.method,
                     response_time_secs=measurement.elapsed,
-                    started_at=datetime.fromtimestamp(measurement.startedAt),
+                    started_at=measurement.start_timestamp,
                 )
                 for measurement in results
             ],

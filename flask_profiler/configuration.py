@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from flask import Flask, g
 
 from .sqlite import Sqlite
@@ -26,23 +24,6 @@ class Configuration:
     @property
     def enabled(self) -> bool:
         return self.read_config().get("enabled", False)
-
-    def sampling_function(self) -> bool:
-        config = self.read_config()
-        if "sampling_function" not in config:
-            return True
-        elif not callable(config["sampling_function"]):
-            raise Exception(
-                "if sampling_function is provided to flask-profiler via config, "
-                "it must be callable, refer to: "
-                "https://github.com/muatik/flask-profiler#sampling"
-            )
-        else:
-            return config["sampling_function"]()
-
-    @property
-    def ignore_patterns(self) -> List[str]:
-        return self.read_config().get("ignore", [])
 
     @property
     def verbose(self) -> bool:
