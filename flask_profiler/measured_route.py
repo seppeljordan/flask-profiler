@@ -1,70 +1,65 @@
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 from flask import Response as FlaskResponse
 from flask import request
 
 from .clock import Clock
 from .configuration import Configuration
-from .use_cases import record_measurement
+from .use_cases import observe_request_handling_use_case as use_case
+from .use_cases.measurement_archive import MeasurementArchivist
 
 ResponseT = Union[str, FlaskResponse]
 logger = logging.getLogger("flask-profiler")
 
 
+class RequestHandler:
+    def __init__(self, original_route) -> None:
+        self.original_route = original_route
+        self.response = None
+
+    def handle_request(self, args: Any, kwargs: Any) -> None:
+        self.response = self.original_route(*args, **kwargs)
+
+    def get_response(self):
+        return self.response
+
+
 @dataclass
 class MeasuredRoute:
-    original_route: Callable[..., ResponseT]
-    use_case: record_measurement.RecordMeasurementUseCase
-    clock: Clock
-    config: Configuration
+    use_case: use_case.ObserveRequestHandlingUseCase
+    request_handler: RequestHandler
 
     def __call__(self, *args, **kwargs) -> ResponseT:
-        if self.is_measurement_skipped():
-            return self.original_route(*args, **kwargs)
-        started_at = self.clock.get_epoch()
-        try:
-            response = self.original_route(*args, **kwargs)
-        finally:
-            stopped_at = self.clock.get_epoch()
-            self.use_case.record_measurement(
-                record_measurement.Request(
-                    route_name=str(request.endpoint),
-                    start_timestamp=datetime.fromtimestamp(started_at),
-                    end_timestamp=datetime.fromtimestamp(stopped_at),
-                    method=request.method,
-                )
+        self.use_case.record_measurement(
+            use_case.Request(
+                request_args=args,
+                request_kwargs=kwargs,
+                route_name=str(request.endpoint),
+                method=request.method,
             )
-        return response
-
-    def is_measurement_skipped(self) -> bool:
-        return self.is_ignored() or not self.config.sampling_function()
-
-    def is_ignored(self) -> bool:
-        url_rule = str(request.url_rule)
-        for pattern in self.config.ignore_patterns:
-            if re.search(pattern, url_rule):
-                return True
-        return False
+        )
+        return self.request_handler.get_response()
 
 
 @dataclass
 class MeasuredRouteFactory:
-    use_case: record_measurement.RecordMeasurementUseCase
     clock: Clock
     config: Configuration
+    archivist: MeasurementArchivist
 
     def create_measured_route(
         self, original_route: Callable[..., ResponseT]
     ) -> MeasuredRoute:
+        request_handler = RequestHandler(original_route)
         return MeasuredRoute(
-            original_route=original_route,
-            clock=self.clock,
-            config=self.config,
-            use_case=self.use_case,
+            use_case=use_case.ObserveRequestHandlingUseCase(
+                request_handler=request_handler,
+                clock=self.clock,
+                archivist=self.archivist,
+            ),
+            request_handler=request_handler,
         )

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 
@@ -181,9 +181,10 @@ class Sqlite:
     def _row_to_record(self, row) -> interface.Record:
         return interface.Record(
             id=row["ID"],
-            startedAt=row["start_timestamp"],
-            endedAt=row["end_timestamp"],
-            elapsed=row["elapsed"],
+            start_timestamp=datetime.fromtimestamp(
+                row["start_timestamp"], tz=timezone.utc
+            ),
+            end_timestamp=datetime.fromtimestamp(row["end_timestamp"], tz=timezone.utc),
             method=row["method"],
             name=row["route_name"],
         )

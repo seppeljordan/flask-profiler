@@ -46,9 +46,6 @@ app.config["flask_profiler"] = {
         "username": "admin",
         "password": "admin"
     },
-    "ignore": [
-        "^/static/.*"
-    ]
 }
 
 
@@ -128,30 +125,6 @@ Below the other options are listed.
 |----------|-------------|------|
 | storage.FILE | SQLite database file name | flask_profiler.sql|
 
-### Sampling
-
-Control the number of samples taken by flask-profiler
-
-You would want control over how many times should the flask profiler
-take samples while running in production mode.  You can supply a
-function and control the sampling according to your business logic.
-
-Example 1: Sample 1 in 100 times with random numbers
-```python
-app.config["flask_profiler"] = {
-    "sampling_function": lambda: True if random.sample(list(range(1, 101)), 1) == [42] else False
-}
-```
-
-Example 2: Sample for specific users
-```python
-app.config["flask_profiler"] = {
-    "sampling_function": lambda: True if user is 'divyendu' else False
-}
-```
-
-If sampling function is not present, all requests will be sampled.
-
 ### Changing flask-profiler endpoint root
 
 By default, we can access flask-profiler at <your-app>/flask-profiler
@@ -161,22 +134,6 @@ app.config["flask_profiler"] = {
         "endpointRoot": "secret-flask-profiler"
 }
 ```
-
-### Ignored endpoints
-
-Flask-profiler will try to track every endpoint defined so far when
-`flask_profiler.init_app()` is invoked. If you want to exclude some of
-the endpoints, you can define matching regex for them as follows:
-
-```python
-app.config["flask_profiler"] = {
-        "ignore": [
-            "^/static/.*",
-            "/api/users/\w+/password"
-        ]
-}
-```
-
 
 ## Authors
 * [Musafa Atik](https://www.linkedin.com/in/muatik)

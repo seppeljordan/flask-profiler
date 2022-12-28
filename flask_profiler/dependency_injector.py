@@ -13,7 +13,6 @@ from .presenters.get_details_presenter import GetDetailsPresenter
 from .presenters.get_summary_presenter import GetSummaryPresenter
 from .use_cases.get_details_use_case import GetDetailsUseCase
 from .use_cases.get_summary_use_case import GetSummaryUseCase
-from .use_cases.record_measurement import RecordMeasurementUseCase
 from .views.get_details_view import GetDetailsView
 from .views.get_summary_view import GetSummaryView
 
@@ -60,17 +59,12 @@ class DependencyInjector:
     def get_details_view(self) -> GetDetailsView:
         return GetDetailsView()
 
-    def get_record_measurement_use_case(self) -> RecordMeasurementUseCase:
-        return RecordMeasurementUseCase(
-            archive=self.get_measurement_archivist(),
-        )
-
     def get_measurement_archivist(self) -> DeferredArchivist:
         return DeferredArchivist(self.get_configuration())
 
     def get_measured_route_factory(self) -> MeasuredRouteFactory:
         return MeasuredRouteFactory(
-            use_case=self.get_record_measurement_use_case(),
             clock=self.get_clock(),
             config=self.get_configuration(),
+            archivist=self.get_measurement_archivist(),
         )

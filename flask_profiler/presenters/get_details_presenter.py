@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from flask_profiler.pagination import PaginationContext
 from flask_profiler.request import HttpRequest
-from flask_profiler.use_cases.get_details_use_case import GetDetailsUseCase as UseCase
+from flask_profiler.use_cases import get_details_use_case as use_case
 
 from . import table
 from .formatting import format_duration_in_ms
@@ -28,7 +28,7 @@ class GetDetailsPresenter:
 
     def render_details(
         self,
-        response: UseCase.Response,
+        response: use_case.Response,
         pagination: PaginationContext,
         http_request: HttpRequest,
     ) -> ViewModel:
