@@ -19,15 +19,20 @@ class Request:
 
 
 @dataclass
+class Response:
+    request_handler_response: Any
+
+
+@dataclass
 class ObserveRequestHandlingUseCase:
     archivist: MeasurementArchivist
     clock: Clock
     request_handler: RequestHandler
 
-    def record_measurement(self, request: Request) -> None:
+    def record_measurement(self, request: Request) -> Response:
         start_timestamp = self.clock.utc_now()
         try:
-            self.request_handler.handle_request(
+            response = self.request_handler.handle_request(
                 args=request.request_args, kwargs=request.request_kwargs
             )
         finally:
@@ -40,3 +45,4 @@ class ObserveRequestHandlingUseCase:
                     method=request.method,
                 )
             )
+        return Response(request_handler_response=response)

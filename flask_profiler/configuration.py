@@ -68,11 +68,7 @@ class Configuration:
         db = g.pop("flask_profiler_collection", None)
         if db:
             logger.debug("Destroy database connection")
-            try:
-                db.close_connection()
-            except Exception as e:
-                logger.exception(e)
-                raise
+            db.close_connection()
 
     def _create_storage(self) -> MeasurementDatabase:
         logger.debug("Creating measurement database")

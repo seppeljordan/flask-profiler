@@ -19,15 +19,11 @@ logger = logging.getLogger(__name__)
 class RequestHandler:
     def __init__(self, route_name: str, original_route) -> None:
         self.original_route = original_route
-        self.response = None
         self._name = route_name
 
-    def handle_request(self, args: Any, kwargs: Any) -> None:
+    def handle_request(self, args: Any, kwargs: Any) -> Any:
         logger.debug("Executing route %s, args=%s, kwargs=%s", self._name, args, kwargs)
-        self.response = self.original_route(*args, **kwargs)
-
-    def get_response(self):
-        return self.response
+        return self.original_route(*args, **kwargs)
 
     def name(self) -> str:
         return self._name
@@ -40,15 +36,15 @@ class MeasuredRoute:
 
     def __call__(self, *args, **kwargs) -> ResponseT:
         logger.debug("Measuring route %s", self.request_handler.name())
-        self.use_case.record_measurement(
+        response = self.use_case.record_measurement(
             use_case.Request(
                 request_args=args,
                 request_kwargs=kwargs,
                 method=request.method,
             )
         )
-        logger.debug("Response is %s", self.request_handler.get_response())
-        return self.request_handler.get_response()
+        logger.debug("Response is %s", response.request_handler_response)
+        return response.request_handler_response
 
 
 @dataclass
