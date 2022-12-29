@@ -26,15 +26,17 @@ class ObserveRequestHandlingUseCase:
 
     def record_measurement(self, request: Request) -> None:
         start_timestamp = self.clock.utc_now()
-        self.request_handler.handle_request(
-            args=request.request_args, kwargs=request.request_kwargs
-        )
-        end_timestamp = self.clock.utc_now()
-        self.archivist.record_measurement(
-            Measurement(
-                route_name=self.request_handler.name(),
-                start_timestamp=start_timestamp,
-                end_timestamp=end_timestamp,
-                method=request.method,
+        try:
+            self.request_handler.handle_request(
+                args=request.request_args, kwargs=request.request_kwargs
             )
-        )
+        finally:
+            end_timestamp = self.clock.utc_now()
+            self.archivist.record_measurement(
+                Measurement(
+                    route_name=self.request_handler.name(),
+                    start_timestamp=start_timestamp,
+                    end_timestamp=end_timestamp,
+                    method=request.method,
+                )
+            )

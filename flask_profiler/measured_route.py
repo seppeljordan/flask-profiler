@@ -47,6 +47,7 @@ class MeasuredRoute:
                 method=request.method,
             )
         )
+        logger.debug("Response is %s", self.request_handler.get_response())
         return self.request_handler.get_response()
 
 
