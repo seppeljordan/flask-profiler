@@ -60,7 +60,6 @@ class Configuration:
     def collection(self) -> measurement_archive.MeasurementArchivist:
         if "flask_profiler_collection" not in g:
             g.flask_profiler_collection = self._create_storage()
-
         return g.flask_profiler_collection
 
     @classmethod
@@ -69,7 +68,11 @@ class Configuration:
         db = g.pop("flask_profiler_collection", None)
         if db:
             logger.debug("Destroy database connection")
-            db.close_connection()
+            try:
+                db.close_connection()
+            except Exception as e:
+                logger.exception(e)
+                raise
 
     def _create_storage(self) -> MeasurementDatabase:
         logger.debug("Creating measurement database")
