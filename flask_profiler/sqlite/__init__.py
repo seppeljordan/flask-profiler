@@ -145,6 +145,7 @@ class Sqlite:
         migrations.run_necessary_migrations()
 
     def record_measurement(self, measurement: interface.Measurement) -> None:
+        LOGGER.debug("Recording measurement %s", measurement)
         query = q.Insert(
             into=q.Identifier("measurements"),
             columns=[
