@@ -10,7 +10,7 @@ class GetSummaryView:
     def render_view_model(self, view_model: Presenter.ViewModel) -> HttpResponse:
         return HttpResponse(
             content=render_template(
-                "summary.html",
+                "flask_profiler/summary.html",
                 **dict(
                     view_model=view_model,
                 )

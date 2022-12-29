@@ -1,9 +1,9 @@
-{% extends "base.html" %}
-{% from 'macros/table.html' import render_table %}
-{% from 'macros/pagination.html' import render_paginator %}
+{% extends "flask_profiler/base.html" %}
+{% from 'flask_profiler/macros/table.html' import render_table %}
+{% from 'flask_profiler/macros/pagination.html' import render_paginator %}
 
 {% block headline %}
-Summarized view
+Detailed view
 {% endblock %}
 
 {% block content %}
@@ -11,11 +11,11 @@ Summarized view
 <form method="get">
     <div>
 	<label>Method name:</label>
-	<input name="method" value="{{view_model.method_filter_text}}"></input>
+	<input name="method" value="{{view_model.method_filter_text}}">
     </div>
     <div>
 	<label>Route name:</label>
-	<input name="name" value="{{view_model.name_filter_text}}"></input>
+	<input name="name" value="{{view_model.name_filter_text}}">
     </div>
     <div>
 	<label>Requested After:</label>
@@ -23,10 +23,17 @@ Summarized view
 	    name="requested_after"
 	    type="datetime-local"
 	    value="{{view_model.requested_after_filter_text}}">
-</input>
+    </div>
+    <div>
+	<label>Requested Before:</label>
+	<input
+	    name="requested_before"
+	    type="datetime-local"
+	    value="{{view_model.requested_before_filter_text}}">
     </div>
     <button type="submit">Filter</button>
 </form>
+
 {{ render_paginator(view_model.pagination) }}
 {{ render_table(view_model.table) }}
 {% endblock %}
