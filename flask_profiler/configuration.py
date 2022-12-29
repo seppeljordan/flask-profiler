@@ -65,11 +65,14 @@ class Configuration:
 
     @classmethod
     def cleanup_appcontext(cls, exception) -> None:
+        logger.debug("Starting cleanup")
         db = g.pop("flask_profiler_collection", None)
         if db:
+            logger.debug("Destroy database connection")
             db.close_connection()
 
     def _create_storage(self) -> MeasurementDatabase:
+        logger.debug("Creating measurement database")
         storage: MeasurementDatabase
         conf = self.read_config().get("storage", {})
         try:
