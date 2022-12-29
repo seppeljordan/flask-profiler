@@ -11,7 +11,7 @@ from .dependency_injector import DependencyInjector
 from .request import WrappedRequest
 from .response import HttpResponse
 
-logger = logging.getLogger("flask-profiler")
+logger = logging.getLogger(__name__)
 auth = HTTPBasicAuth()
 
 

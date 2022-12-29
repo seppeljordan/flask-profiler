@@ -13,7 +13,7 @@ from .entities.measurement_archive import MeasurementArchivist
 from .use_cases import observe_request_handling_use_case as use_case
 
 ResponseT = Union[str, FlaskResponse]
-logger = logging.getLogger("flask-profiler")
+logger = logging.getLogger(__name__)
 
 
 class RequestHandler:
@@ -23,6 +23,7 @@ class RequestHandler:
         self._name = route_name
 
     def handle_request(self, args: Any, kwargs: Any) -> None:
+        logger.debug("Executing route %s, args=%s, kwargs=%s", self._name, args, kwargs)
         self.response = self.original_route(*args, **kwargs)
 
     def get_response(self):
@@ -38,6 +39,7 @@ class MeasuredRoute:
     request_handler: RequestHandler
 
     def __call__(self, *args, **kwargs) -> ResponseT:
+        logger.debug("Measuring route %s", self.request_handler.name())
         self.use_case.record_measurement(
             use_case.Request(
                 request_args=args,
@@ -57,6 +59,7 @@ class MeasuredRouteFactory:
     def create_measured_route(
         self, route_name: str, original_route: Callable[..., ResponseT]
     ) -> MeasuredRoute:
+        logger.debug("Measuring calls to route %s", route_name)
         request_handler = RequestHandler(
             route_name=route_name, original_route=original_route
         )
