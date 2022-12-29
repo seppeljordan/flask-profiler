@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+from logging import getLogger
+from typing import Protocol
+
 from flask import Flask, g
 
+from .database import Database
 from .entities import measurement_archive
+from .fallback_storage import MeasurementArchivistPlaceholder
 from .sqlite import Sqlite
+
+logger = getLogger(__name__)
+
+
+class MeasurementDatabase(measurement_archive.MeasurementArchivist, Database, Protocol):
+    ...
 
 
 class DeferredArchivist:
@@ -47,17 +58,29 @@ class Configuration:
 
     @property
     def collection(self) -> measurement_archive.MeasurementArchivist:
-        collection = g.get("flask_profiler_collection")
-        if collection is None:
-            collection = self._create_storage()
-            g.flask_profiler_collection = collection
-        return collection
+        if "flask_profiler_collection" not in g:
+            g.flask_profiler_collection = self._create_storage()
 
-    def _create_storage(self) -> measurement_archive.MeasurementArchivist:
+        return g.flask_profiler_collection
+
+    @classmethod
+    def cleanup_appcontext(cls, exception) -> None:
+        db = g.pop("flask_profiler_collection", None)
+        if db:
+            db.close_connection()
+
+    def _create_storage(self) -> MeasurementDatabase:
+        storage: MeasurementDatabase
         conf = self.read_config().get("storage", {})
-        return Sqlite(
-            sqlite_file=conf.get("FILE", "flask_profiler.sql"),
-        )
+        try:
+            storage = Sqlite(
+                sqlite_file=conf.get("FILE", "flask_profiler.sql"),
+            )
+        except Exception as e:
+            logger.error("Failed to initialize measurement storage")
+            logger.exception(e)
+            storage = MeasurementArchivistPlaceholder()
+        return storage
 
     def read_config(self):
         return (

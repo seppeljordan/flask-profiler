@@ -187,6 +187,9 @@ class Sqlite:
             ),
         )
 
+    def close_connection(self) -> None:
+        self.connection.close()
+
     def _row_to_record(self, row) -> interface.Record:
         return interface.Record(
             id=row["ID"],

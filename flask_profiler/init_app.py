@@ -52,3 +52,4 @@ def init_app(app: Flask) -> None:
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:
         logger.warning("flask-profiler is working without basic auth!")
+    app.teardown_appcontext(config.cleanup_appcontext)
