@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from functools import wraps
 from typing import Any, Callable, Union
 
 from flask import Response as FlaskResponse
@@ -60,11 +61,13 @@ class MeasuredRouteFactory:
         request_handler = RequestHandler(
             route_name=route_name, original_route=original_route
         )
-        return MeasuredRoute(
-            use_case=use_case.ObserveRequestHandlingUseCase(
+        return wraps(original_route)(
+            MeasuredRoute(
+                use_case=use_case.ObserveRequestHandlingUseCase(
+                    request_handler=request_handler,
+                    clock=self.clock,
+                    archivist=self.archivist,
+                ),
                 request_handler=request_handler,
-                clock=self.clock,
-                archivist=self.archivist,
-            ),
-            request_handler=request_handler,
+            )
         )
