@@ -2,6 +2,7 @@ import unittest
 from functools import lru_cache
 
 from flask_profiler.use_cases.get_details_use_case import GetDetailsUseCase
+from flask_profiler.use_cases.get_summary_use_case import GetSummaryUseCase
 from tests.clock import FakeClock
 
 from .measurement_archive import FakeMeasurementArchivist
@@ -29,6 +30,9 @@ class DependencyInjector:
 
     def get_details_use_case(self) -> GetDetailsUseCase:
         return GetDetailsUseCase(archivist=self.get_measurement_archivist())
+
+    def get_summary_use_case(self) -> GetSummaryUseCase:
+        return GetSummaryUseCase(archivist=self.get_measurement_archivist())
 
     def get_request_handler_factory(self) -> FakeRequestHandlerFactory:
         return FakeRequestHandlerFactory(clock=self.get_clock())

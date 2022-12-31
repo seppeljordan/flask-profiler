@@ -7,7 +7,7 @@ from flask_profiler.pagination import PAGE_QUERY_ARGUMENT, PaginationContext
 from flask_profiler.presenters.get_summary_presenter import GetSummaryPresenter
 from flask_profiler.request import HttpRequest
 from flask_profiler.response import HttpResponse
-from flask_profiler.use_cases.get_summary_use_case import GetSummaryUseCase
+from flask_profiler.use_cases import get_summary_use_case as uc
 from flask_profiler.views.get_summary_view import GetSummaryView
 
 from .controller import Controller
@@ -15,14 +15,14 @@ from .controller import Controller
 
 @dataclass
 class GetSummaryController(Controller):
-    use_case: GetSummaryUseCase
+    use_case: uc.GetSummaryUseCase
     presenter: GetSummaryPresenter
     view: GetSummaryView
 
     def handle_request(self, http_request: HttpRequest) -> HttpResponse:
         pagination = self.get_pagination_context(http_request)
         form_data = self.parse_form_data(http_request)
-        request = GetSummaryUseCase.Request(
+        request = uc.Request(
             limit=pagination.get_limit(),
             offset=pagination.get_offset(),
             method=form_data.method,
@@ -33,7 +33,7 @@ class GetSummaryController(Controller):
 
     def _process_request(
         self,
-        request: GetSummaryUseCase.Request,
+        request: uc.Request,
         pagination: PaginationContext,
         http_request: HttpRequest,
     ) -> HttpResponse:

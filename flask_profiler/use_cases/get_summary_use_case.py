@@ -8,30 +8,33 @@ from flask_profiler.entities import measurement_archive
 
 
 @dataclass
+class Measurement:
+    name: str
+    method: str
+    request_count: int
+    average_response_time_secs: float
+    min_response_time_secs: float
+    max_response_time_secs: float
+
+
+@dataclass
+class Request:
+    limit: int
+    offset: int
+    method: Optional[str] = None
+    name_filter: Optional[str] = None
+    requested_after: Optional[datetime] = None
+
+
+@dataclass
+class Response:
+    measurements: List[Measurement]
+    total_results: int
+    request: Request
+
+
+@dataclass
 class GetSummaryUseCase:
-    @dataclass
-    class Measurement:
-        name: str
-        method: str
-        request_count: int
-        average_response_time_secs: float
-        min_response_time_secs: float
-        max_response_time_secs: float
-
-    @dataclass
-    class Request:
-        limit: int
-        offset: int
-        method: Optional[str] = None
-        name_filter: Optional[str] = None
-        requested_after: Optional[datetime] = None
-
-    @dataclass
-    class Response:
-        measurements: List[GetSummaryUseCase.Measurement]
-        total_results: int
-        request: GetSummaryUseCase.Request
-
     archivist: measurement_archive.MeasurementArchivist
 
     def get_summary(self, request: Request) -> Response:
@@ -45,9 +48,9 @@ class GetSummaryUseCase:
         results = records.summarize()
         total_results = len(results)
         results = results.limit(request.limit).offset(request.offset)
-        return self.Response(
+        return Response(
             measurements=[
-                self.Measurement(
+                Measurement(
                     name=measurement.name,
                     method=measurement.method,
                     request_count=measurement.count,

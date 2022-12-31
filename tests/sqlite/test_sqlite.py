@@ -14,7 +14,7 @@ class SqliteTests(TestCase):
         self.db.create_database()
 
     def create_measurement(
-        self, route_name: str = "", method: str = "GET"
+        self, route_name: str = "test_route_name", method: str = "GET"
     ) -> archive.Measurement:
         return archive.Measurement(
             route_name=route_name,

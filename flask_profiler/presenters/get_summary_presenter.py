@@ -3,7 +3,7 @@ from urllib.parse import ParseResult
 
 from flask_profiler.pagination import PaginationContext
 from flask_profiler.request import HttpRequest
-from flask_profiler.use_cases.get_summary_use_case import GetSummaryUseCase as UseCase
+from flask_profiler.use_cases import get_summary_use_case as use_case
 
 from . import table
 from .formatting import format_duration_in_ms
@@ -31,7 +31,7 @@ class GetSummaryPresenter:
 
     def render_summary(
         self,
-        response: UseCase.Response,
+        response: use_case.Response,
         pagination: PaginationContext,
         http_request: HttpRequest,
     ) -> ViewModel:
