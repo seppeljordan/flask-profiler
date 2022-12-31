@@ -57,7 +57,7 @@ class Configuration:
         return self.read_config()["basicAuth"]["password"]
 
     @property
-    def collection(self) -> measurement_archive.MeasurementArchivist:
+    def collection(self) -> MeasurementDatabase:
         if "flask_profiler_collection" not in g:
             g.flask_profiler_collection = self._create_storage()
         return g.flask_profiler_collection

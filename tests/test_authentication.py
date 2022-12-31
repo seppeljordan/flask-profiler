@@ -1,3 +1,7 @@
+import pathlib
+import shutil
+import tempfile
+
 from flask import Flask
 from flask_testing import TestCase
 
@@ -7,7 +11,12 @@ from flask_profiler import init_app
 class BasicAuthTests(TestCase):
     app: Flask
 
+    def tearDown(self) -> None:
+        super().tearDown()
+        shutil.rmtree(self.data_dir)
+
     def create_app(self) -> Flask:
+        self.data_dir = pathlib.Path(tempfile.mkdtemp())
         self.expected_username = "testusername"
         self.expected_password = "test password"
         app = Flask("Authentication test app")
@@ -15,7 +24,7 @@ class BasicAuthTests(TestCase):
             enabled=True,
             endpointRoot="profiling",
             storage=dict(
-                FILE=":memory:",
+                FILE=str(self.data_dir / "db.sql"),
             ),
             basicAuth=dict(
                 enabled=True,

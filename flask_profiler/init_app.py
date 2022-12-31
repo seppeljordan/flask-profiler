@@ -48,6 +48,8 @@ def init_app(app: Flask) -> None:
     route_wrapper = RouteWrapper(
         measured_route_factory=injector.get_measured_route_factory()
     )
+    with app.app_context():
+        config.collection.create_database()
     route_wrapper.wrap_all_routes(app)
     app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:

@@ -16,6 +16,9 @@ class MeasurementArchivistPlaceholder:
     def close_connection(self) -> None:
         pass
 
+    def create_database(self) -> None:
+        pass
+
 
 class RecordedMeasurementsPlaceholder:
     def __iter__(self) -> Iterator[archive.Record]:

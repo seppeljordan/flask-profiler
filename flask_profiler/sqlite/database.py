@@ -19,9 +19,9 @@ class Sqlite:
         self.connection = sqlite3.connect(self.sqlite_file, check_same_thread=False)
         self.connection.row_factory = sqlite3.Row
         self.cursor = self.connection.cursor()
-        self.create_database()
 
     def create_database(self) -> None:
+        LOGGER.info("Check if DB migrations need to be run")
         migrations = Migrations(self.connection)
         migrations.run_necessary_migrations()
 
