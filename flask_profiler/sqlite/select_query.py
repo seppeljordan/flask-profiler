@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
+from urllib.parse import quote
 
 from flask_profiler import query as q
 from flask_profiler.entities import measurement_archive as interface
@@ -97,7 +98,7 @@ class RecordResult(SelectQuery[interface.Record]):
     def with_method(self, method: str) -> RecordResult:
         return self._with_modified_query(
             lambda query: query.and_where(
-                q.BinaryOp("=", q.Identifier("method"), q.Literal(method))
+                q.BinaryOp("=", q.Identifier("method"), q.Literal(quote(method)))
             )
         )
 
@@ -105,7 +106,9 @@ class RecordResult(SelectQuery[interface.Record]):
         return self._with_modified_query(
             lambda query: query.and_where(
                 q.BinaryOp(
-                    "LIKE", q.Identifier("route_name"), q.Literal(f"%{substring}%")
+                    "LIKE",
+                    q.Identifier("route_name"),
+                    q.Literal(f"%{quote(substring)}%"),
                 )
             )
         )
@@ -125,5 +128,12 @@ class RecordResult(SelectQuery[interface.Record]):
                 q.BinaryOp(
                     "<", q.Identifier("start_timestamp"), q.Literal(t.timestamp())
                 )
+            )
+        )
+
+    def with_id(self, id_: int) -> RecordResult:
+        return self._with_modified_query(
+            lambda query: query.and_where(
+                q.BinaryOp("=", q.Identifier("ID"), q.Literal(id_))
             )
         )

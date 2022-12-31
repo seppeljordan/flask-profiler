@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 from datetime import datetime, timezone
+from urllib.parse import quote, unquote
 
 from flask_profiler import query as q
 from flask_profiler.entities import measurement_archive as interface
@@ -25,7 +26,7 @@ class Sqlite:
         migrations = Migrations(self.connection)
         migrations.run_necessary_migrations()
 
-    def record_measurement(self, measurement: interface.Measurement) -> None:
+    def record_measurement(self, measurement: interface.Measurement) -> int:
         LOGGER.debug("Recording measurement %s", measurement)
         query = q.Insert(
             into=q.Identifier("measurements"),
@@ -37,15 +38,17 @@ class Sqlite:
             ],
             rows=[
                 [
-                    q.Literal(measurement.route_name),
+                    q.Literal(quote(measurement.route_name)),
                     q.Literal(measurement.start_timestamp.timestamp()),
                     q.Literal(measurement.end_timestamp.timestamp()),
-                    q.Literal(measurement.method),
+                    q.Literal(quote(measurement.method)),
                 ]
             ],
+            returning=q.All(),
         )
-        self.cursor.execute(str(query))
+        result = self.cursor.execute(str(query)).fetchone()
         self.connection.commit()
+        return result["ID"]
 
     def get_records(self) -> RecordResult:
         return RecordResult(
@@ -79,6 +82,6 @@ class Sqlite:
                 row["start_timestamp"], tz=timezone.utc
             ),
             end_timestamp=datetime.fromtimestamp(row["end_timestamp"], tz=timezone.utc),
-            method=row["method"],
-            name=row["route_name"],
+            method=unquote(row["method"]),
+            name=unquote(row["route_name"]),
         )

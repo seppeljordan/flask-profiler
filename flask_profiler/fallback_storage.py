@@ -7,8 +7,8 @@ from flask_profiler.entities import measurement_archive as archive
 
 
 class MeasurementArchivistPlaceholder:
-    def record_measurement(self, measurement: archive.Measurement) -> None:
-        pass
+    def record_measurement(self, measurement: archive.Measurement) -> int:
+        return 0
 
     def get_records(self) -> RecordedMeasurementsPlaceholder:
         return RecordedMeasurementsPlaceholder()
@@ -46,6 +46,9 @@ class RecordedMeasurementsPlaceholder:
         return self
 
     def requested_before(self, t: datetime) -> RecordedMeasurementsPlaceholder:
+        return self
+
+    def with_id(self, id_: int) -> RecordedMeasurementsPlaceholder:
         return self
 
 

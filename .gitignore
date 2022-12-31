@@ -65,3 +65,6 @@ target/
 
 # nix
 /result
+
+# hypothesis
+/.hypothesis

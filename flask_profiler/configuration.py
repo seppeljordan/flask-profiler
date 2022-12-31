@@ -21,8 +21,8 @@ class DeferredArchivist:
     def __init__(self, configuration: Configuration) -> None:
         self.configuration = configuration
 
-    def record_measurement(self, measurement: measurement_archive.Measurement) -> None:
-        self.configuration.collection.record_measurement(measurement)
+    def record_measurement(self, measurement: measurement_archive.Measurement) -> int:
+        return self.configuration.collection.record_measurement(measurement)
 
     def get_records(self) -> measurement_archive.RecordedMeasurements:
         return self.configuration.collection.get_records()

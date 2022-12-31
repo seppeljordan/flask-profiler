@@ -9,7 +9,7 @@ T = TypeVar("T", covariant=True)
 
 
 class MeasurementArchivist(Protocol):
-    def record_measurement(self, measurement: Measurement) -> None:
+    def record_measurement(self, measurement: Measurement) -> int:
         ...
 
     def get_records(self) -> RecordedMeasurements:
@@ -65,6 +65,9 @@ class RecordedMeasurements(FiledData[Record], Protocol):
         ...
 
     def requested_before(self, t: datetime) -> RecordedMeasurements:
+        ...
+
+    def with_id(self, id_: int) -> RecordedMeasurements:
         ...
 
 
