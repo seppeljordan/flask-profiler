@@ -44,10 +44,30 @@ class SelectQuery(Generic[T]):
         return result.fetchone()[0]
 
     def limit(self: SelectQueryT, n: int) -> SelectQueryT:
-        return self._with_modified_query(lambda query: query.limit(n))
+        if self.query.limit_clause < 0:
+            new_limit = n
+        else:
+            new_limit = min(max(0, n), self.query.limit_clause)
+        return replace(
+            self,
+            query=replace(
+                self.query,
+                limit_clause=new_limit,
+            ),
+        )
 
     def offset(self: SelectQueryT, n: int) -> SelectQueryT:
-        return self._with_modified_query(lambda query: query.offset(n))
+        if self.query.offset_clause < 0:
+            new_offset = n
+        else:
+            new_offset = self.query.offset_clause + n
+        return replace(
+            self,
+            query=replace(
+                self.query,
+                offset_clause=new_offset,
+            ),
+        )
 
 
 class RecordResult(SelectQuery[interface.Record]):

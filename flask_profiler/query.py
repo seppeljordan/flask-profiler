@@ -65,8 +65,8 @@ class Select:
     from_clause: FromClause
     where_clause: Optional[Expression] = None
     group_by: Optional[Expression] = None
-    limit_clause: Optional[int] = None
-    offset_clause: Optional[int] = None
+    limit_clause: int = -1
+    offset_clause: int = -1
 
     def as_query(self) -> str:
         query = "SELECT " + self.selector.as_selector_clause()
@@ -75,26 +75,19 @@ class Select:
             query += " WHERE " + self.where_clause.as_expression()
         if self.group_by is not None:
             query += " GROUP BY " + self.group_by.as_expression()
-        if self.limit_clause is not None:
+        query += self._limit_clause()
+        return query
+
+    def _limit_clause(self) -> str:
+        query = ""
+        if self.limit_clause > 0 or self.offset_clause > 0:
             query += f" LIMIT {self.limit_clause}"
-        if self.offset_clause is not None:
+        if self.offset_clause > 0:
             query += f" OFFSET {self.offset_clause}"
         return query
 
     def as_vector(self) -> str:
         return self.as_query()
-
-    def limit(self, n) -> Select:
-        return replace(
-            self,
-            limit_clause=n,
-        )
-
-    def offset(self, n) -> Select:
-        return replace(
-            self,
-            offset_clause=n,
-        )
 
     def and_where(self, expression: Expression) -> Select:
         return replace(
@@ -112,6 +105,9 @@ class Select:
 
     def as_expression(self) -> str:
         return str(self)
+
+    def as_from_clause(self) -> str:
+        return "(" + str(self) + ")"
 
 
 @dataclass(frozen=True)
@@ -381,6 +377,9 @@ class All:
         return "*"
 
     def as_selector(self) -> str:
+        return str(self)
+
+    def as_selector_clause(self) -> str:
         return str(self)
 
 
