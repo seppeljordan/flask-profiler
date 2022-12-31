@@ -16,16 +16,18 @@ class FakeMeasurementArchivist:
     def __init__(self) -> None:
         self.records: List[Record] = list()
 
-    def record_measurement(self, measurement: Measurement) -> None:
+    def record_measurement(self, measurement: Measurement) -> int:
+        id_ = len(self.records)
         self.records.append(
             Record(
-                id=len(self.records),
+                id=id_,
                 name=measurement.route_name,
                 method=measurement.method,
                 start_timestamp=measurement.start_timestamp,
                 end_timestamp=measurement.end_timestamp,
             )
         )
+        return id_
 
     def get_records(self) -> RecordedMeasurements:
         return RecordedMeasurements(items=lambda: iter(self.records))
@@ -79,6 +81,9 @@ class RecordedMeasurements(IteratorBasedData[Record]):
         return SummarizedMeasurements(
             items=lambda: iter(SummaryBuilder.from_iterator(self.items()))
         )
+
+    def with_id(self, id_: int) -> RecordedMeasurements:
+        return replace(self, items=lambda: filter(lambda i: i.id == id_, self.items()))
 
 
 class SummarizedMeasurements(IteratorBasedData[Summary]):

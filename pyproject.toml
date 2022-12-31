@@ -61,5 +61,5 @@ filterwarnings = [
 files = ["flask_profiler", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["pymongo", "bson.*", "sqlalchemy.*", "flask_httpauth", "flask_testing"]
+module = ["pymongo", "bson.*", "sqlalchemy.*", "flask_httpauth", "flask_testing", "hypothesis"]
 ignore_missing_imports = true

@@ -48,7 +48,7 @@
               ${pythonEnv}/bin/flake8
               mkdir $out
             '';
-            mypy-check = pkgs.runCommand "flake8-check" { } ''
+            mypy-check = pkgs.runCommand "mypy-check" { } ''
               cd ${self}
               ${pythonEnv}/bin/mypy
               mkdir $out
