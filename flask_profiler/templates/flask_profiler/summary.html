@@ -7,32 +7,36 @@ Summarized view
 {% endblock %}
 
 {% block content %}
-<h3>Filters</h3>
-<form method="get">
-    <div>
-	<label>Method name:</label>
-	<input name="method" value="{{view_model.method_filter_text}}">
-    </div>
-    <div>
-	<label>Route name:</label>
-	<input name="name" value="{{view_model.name_filter_text}}">
-    </div>
-    <div>
-	<label>Requested After:</label>
-	<input
-	    name="requested_after"
-	    type="datetime-local"
-	    value="{{view_model.requested_after_filter_text}}">
-    </div>
-    <div>
-	<label>Requested Before:</label>
-	<input
-	    name="requested_before"
-	    type="datetime-local"
-	    value="{{view_model.requested_before_filter_text}}">
-    </div>
-    <button type="submit">Filter</button>
-</form>
-{{ render_paginator(view_model.pagination) }}
-{{ render_table(view_model.table) }}
+<div>
+    <h3>Filters</h3>
+    <form method="get">
+	<div>
+	    <label>Method name:</label>
+	    <input name="method" value="{{view_model.method_filter_text}}">
+	</div>
+	<div>
+	    <label>Route name:</label>
+	    <input name="name" value="{{view_model.name_filter_text}}">
+	</div>
+	<div>
+	    <label>Requested After:</label>
+	    <input
+		name="requested_after"
+		type="datetime-local"
+		value="{{view_model.requested_after_filter_text}}">
+	</div>
+	<div>
+	    <label>Requested Before:</label>
+	    <input
+		name="requested_before"
+		type="datetime-local"
+		value="{{view_model.requested_before_filter_text}}">
+	</div>
+	<button type="submit">Filter</button>
+    </form>
+</div>
+<div>
+    {{ render_paginator(view_model.pagination) }}
+    {{ render_table(view_model.table) }}
+</div>
 {% endblock %}
