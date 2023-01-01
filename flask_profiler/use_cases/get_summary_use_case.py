@@ -24,6 +24,7 @@ class Request:
     method: Optional[str] = None
     name_filter: Optional[str] = None
     requested_after: Optional[datetime] = None
+    requested_before: Optional[datetime] = None
 
 
 @dataclass
@@ -45,6 +46,8 @@ class GetSummaryUseCase:
             records = records.with_name_containing(request.name_filter)
         if request.requested_after is not None:
             records = records.requested_after(request.requested_after)
+        if request.requested_before is not None:
+            records = records.requested_before(request.requested_before)
         results = records.summarize()
         total_results = len(results)
         results = results.limit(request.limit).offset(request.offset)

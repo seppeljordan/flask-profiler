@@ -28,6 +28,7 @@ class GetSummaryController(Controller):
             method=form_data.method,
             name_filter=form_data.name,
             requested_after=form_data.requested_after,
+            requested_before=form_data.requested_before,
         )
         return self._process_request(request, pagination, http_request)
 

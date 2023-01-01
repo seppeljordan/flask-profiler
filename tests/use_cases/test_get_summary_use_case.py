@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask_profiler.use_cases import get_summary_use_case as use_case
 from flask_profiler.use_cases import observe_request_handling_use_case as observe
 
@@ -34,6 +36,15 @@ class UseCaseTests(TestCase):
         request = use_case.Request(limit=10, offset=10)
         response = self.use_case.get_summary(request)
         assert response.total_results == 1
+
+    def test_can_exclude_records_from_summary_via_requested_before(self) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 2))
+        self.record_request()
+        request = use_case.Request(
+            limit=10, offset=10, requested_before=datetime(2000, 1, 1)
+        )
+        response = self.use_case.get_summary(request)
+        assert not response.total_results
 
     def record_request(self) -> None:
         request_handler = self.request_handler_factory.create_request_handler()
