@@ -79,6 +79,8 @@ class Summary:
     min_elapsed: float
     max_elapsed: float
     avg_elapsed: float
+    first_measurement: datetime
+    last_measurement: datetime
 
 
 class SummarizedMeasurements(FiledData[Summary], Protocol):

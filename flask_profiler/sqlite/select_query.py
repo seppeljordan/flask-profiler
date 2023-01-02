@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlite3 import Cursor
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 from urllib.parse import quote
@@ -80,6 +80,14 @@ class RecordResult(SelectQuery[interface.Record]):
                         q.Identifier("method"),
                         q.Identifier("route_name"),
                         q.Alias(
+                            q.Aggregate("MIN", q.Identifier("start_timestamp")),
+                            q.Identifier("first_measurement_timestamp"),
+                        ),
+                        q.Alias(
+                            q.Aggregate("MAX", q.Identifier("start_timestamp")),
+                            q.Identifier("last_measurement_timestamp"),
+                        ),
+                        q.Alias(
                             q.Aggregate("COUNT", q.Identifier("id")),
                             q.Identifier("count"),
                         ),
@@ -112,6 +120,12 @@ class RecordResult(SelectQuery[interface.Record]):
                 min_elapsed=row["min"],
                 max_elapsed=row["max"],
                 avg_elapsed=row["avg"],
+                first_measurement=datetime.fromtimestamp(
+                    row["first_measurement_timestamp"], tz=timezone.utc
+                ),
+                last_measurement=datetime.fromtimestamp(
+                    row["last_measurement_timestamp"], tz=timezone.utc
+                ),
             ),
         )
 

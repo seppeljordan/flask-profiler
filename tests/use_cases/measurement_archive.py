@@ -113,6 +113,8 @@ class SummaryBuilder:
     def __iter__(self) -> Iterator[Summary]:
         for key, records in self.summaries.items():
             elapsed_times = [r.elapsed for r in records]
+            first_measurement = min(map(lambda r: r.start_timestamp, records))
+            last_measurement = max(map(lambda r: r.start_timestamp, records))
             yield Summary(
                 name=key.name,
                 method=key.method,
@@ -120,6 +122,8 @@ class SummaryBuilder:
                 max_elapsed=max(elapsed_times),
                 avg_elapsed=sum(elapsed_times) / len(elapsed_times),
                 count=len(elapsed_times),
+                first_measurement=first_measurement,
+                last_measurement=last_measurement,
             )
 
     def record_key(self, record: Record) -> SummaryKey:

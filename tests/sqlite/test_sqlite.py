@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 from unittest import TestCase
 
 from hypothesis import example, given, strategies
@@ -14,12 +15,18 @@ class SqliteTests(TestCase):
         self.db.create_database()
 
     def create_measurement(
-        self, route_name: str = "test_route_name", method: str = "GET"
+        self,
+        route_name: str = "test_route_name",
+        method: str = "GET",
+        start_timestamp: Optional[datetime] = None,
     ) -> archive.Measurement:
+        if start_timestamp is None:
+            start_timestamp = datetime(2000, 1, 1)
+        end_timestamp = start_timestamp + timedelta(days=1)
         return archive.Measurement(
             route_name=route_name,
-            start_timestamp=datetime(2000, 1, 1),
-            end_timestamp=datetime(2000, 1, 2),
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
             method=method,
         )
 
@@ -93,3 +100,57 @@ class GetRecordsTests(SqliteTests):
         id_ = self.db.record_measurement(self.create_measurement())
         records = self.db.get_records()
         assert all(record.id == id_ for record in records.with_id(id_))
+
+    def test_when_summarizing_measurements_include_timestamp_of_only_measurement_as_first_measurement(
+        self,
+    ) -> None:
+        expected_datetime = datetime(2000, 1, 4, tzinfo=timezone.utc)
+        self.db.record_measurement(
+            self.create_measurement(start_timestamp=expected_datetime)
+        )
+        summary = self.db.get_records().summarize()
+        route_summary = list(summary)[0]
+        assert route_summary.first_measurement == expected_datetime
+
+    def test_when_summarizing_measurements_include_timestamp_of_first_of_two_measurements_as_first_measurement(
+        self,
+    ) -> None:
+        expected_datetime = datetime(2000, 1, 4, tzinfo=timezone.utc)
+        self.db.record_measurement(
+            self.create_measurement(start_timestamp=expected_datetime)
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 2, 4, tzinfo=timezone.utc)
+            )
+        )
+        summary = self.db.get_records().summarize()
+        route_summary = list(summary)[0]
+        assert route_summary.first_measurement == expected_datetime
+
+    def test_when_summarizing_measurements_include_timestamp_of_only_measurement_as_last_measurement(
+        self,
+    ) -> None:
+        expected_datetime = datetime(2000, 1, 4, tzinfo=timezone.utc)
+        self.db.record_measurement(
+            self.create_measurement(start_timestamp=expected_datetime)
+        )
+        summary = self.db.get_records().summarize()
+        route_summary = list(summary)[0]
+        assert route_summary.last_measurement == expected_datetime
+
+    def test_when_summarizing_measurements_include_timestamp_of_latter_of_two_measurements_as_last_measurement(
+        self,
+    ) -> None:
+        expected_datetime = datetime(2000, 1, 4, tzinfo=timezone.utc)
+        self.db.record_measurement(
+            self.create_measurement(start_timestamp=expected_datetime)
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(1999, 1, 4, tzinfo=timezone.utc)
+            )
+        )
+        summary = self.db.get_records().summarize()
+        route_summary = list(summary)[0]
+        assert route_summary.last_measurement == expected_datetime
