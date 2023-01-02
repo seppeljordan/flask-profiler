@@ -1,4 +1,3 @@
-from copy import copy
 from dataclasses import dataclass
 from typing import Iterator
 from urllib.parse import ParseResult, parse_qs, urlencode
@@ -21,14 +20,13 @@ class Paginator:
         for n in range(1, self.total_page_count + 1):
             yield Page(
                 label=str(n),
-                link_target=self.get_page_link(n),
+                link_target=self._get_page_link(n),
             )
 
-    def get_page_link(self, n: int) -> str:
+    def _get_page_link(self, n: int) -> str:
         query = dict(parse_qs(self.target_link.query))
         query[PAGE_QUERY_ARGUMENT] = [str(n)]
-        link = copy(self.target_link)
-        link = link._replace(
+        link = self.target_link._replace(
             query=urlencode({key: value[0] for key, value in query.items()})
         )
         return link.geturl()

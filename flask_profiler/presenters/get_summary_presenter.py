@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+from typing import List, Optional
 from urllib.parse import ParseResult
 
 from flask_profiler.pagination import PaginationContext
@@ -40,26 +42,7 @@ class GetSummaryPresenter:
             table=table.Table(
                 headers=HEADERS,
                 rows=[
-                    [
-                        table.Cell(text=measurement.method),
-                        table.Cell(text=measurement.name),
-                        table.Cell(text=str(measurement.request_count)),
-                        table.Cell(
-                            text=format_duration_in_ms(
-                                measurement.average_response_time_secs
-                            )
-                        ),
-                        table.Cell(
-                            text=format_duration_in_ms(
-                                measurement.min_response_time_secs
-                            )
-                        ),
-                        table.Cell(
-                            text=format_duration_in_ms(
-                                measurement.max_response_time_secs
-                            ),
-                        ),
-                    ]
+                    self._render_row(measurement)
                     for measurement in response.measurements
                 ],
             ),
@@ -71,13 +54,30 @@ class GetSummaryPresenter:
             ),
             method_filter_text=response.request.method or "",
             name_filter_text=response.request.name_filter or "",
-            requested_after_filter_text=""
-            if response.request.requested_after is None
-            else response.request.requested_after.isoformat(),
-            requested_before_filter_text=""
-            if response.request.requested_before is None
-            else response.request.requested_before.isoformat(),
+            requested_after_filter_text=self._render_optional_timestamp(
+                response.request.requested_after
+            ),
+            requested_before_filter_text=self._render_optional_timestamp(
+                response.request.requested_before
+            ),
         )
 
     def get_pagination_target_link(self, http_request: HttpRequest) -> ParseResult:
         return get_url_with_query(".summary", http_request.get_arguments())
+
+    def _render_row(self, measurement: use_case.Measurement) -> List[table.Cell]:
+        return [
+            table.Cell(text=measurement.method),
+            table.Cell(text=measurement.name),
+            table.Cell(text=str(measurement.request_count)),
+            table.Cell(
+                text=format_duration_in_ms(measurement.average_response_time_secs)
+            ),
+            table.Cell(text=format_duration_in_ms(measurement.min_response_time_secs)),
+            table.Cell(
+                text=format_duration_in_ms(measurement.max_response_time_secs),
+            ),
+        ]
+
+    def _render_optional_timestamp(self, timestamp: Optional[datetime]) -> str:
+        return "" if timestamp is None else timestamp.isoformat()
