@@ -39,6 +39,9 @@ class RecordedMeasurementsPlaceholder:
     def with_method(self, method: str) -> RecordedMeasurementsPlaceholder:
         return self
 
+    def with_name(self, name: str) -> RecordedMeasurementsPlaceholder:
+        return self
+
     def with_name_containing(self, substring: str) -> RecordedMeasurementsPlaceholder:
         return self
 

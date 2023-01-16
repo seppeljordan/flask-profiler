@@ -72,7 +72,7 @@ class GetRecordsTests(SqliteTests):
 
     @given(route_name=strategies.text())
     @example(route_name=":")
-    def test_can_retrieve_measurement_when_filtering_by_exact_route_name(
+    def test_can_retrieve_measurement_when_filtering_by_containing_route_name(
         self, route_name: str
     ) -> None:
         id_ = self.db.record_measurement(self.create_measurement(route_name=route_name))
@@ -87,6 +87,22 @@ class GetRecordsTests(SqliteTests):
         id_ = self.db.record_measurement(self.create_measurement(method=method))
         records = self.db.get_records().with_method(method)
         assert records.with_id(id_)
+
+    @given(name=strategies.text())
+    def test_can_retrieve_measurement_when_filtering_by_exact_route_name(
+        self, name: str
+    ) -> None:
+        id_ = self.db.record_measurement(self.create_measurement(route_name=name))
+        records = self.db.get_records().with_name(name)
+        assert records.with_id(id_)
+
+    @given(name=strategies.text(min_size=2))
+    def test_substrings_are_not_sufficient_when_filtering_by_exact_route_name(
+        self, name: str
+    ) -> None:
+        id_ = self.db.record_measurement(self.create_measurement(route_name=name))
+        records = self.db.get_records().with_name(name[:-1])
+        assert not records.with_id(id_)
 
     def test_can_filter_measurements_by_id(self) -> None:
         id_ = self.db.record_measurement(self.create_measurement())

@@ -2,6 +2,7 @@ import unittest
 from functools import lru_cache
 
 from flask_profiler.use_cases.get_details_use_case import GetDetailsUseCase
+from flask_profiler.use_cases.get_route_overview import GetRouteOverviewUseCase
 from flask_profiler.use_cases.get_summary_use_case import GetSummaryUseCase
 from tests.clock import FakeClock
 
@@ -44,3 +45,6 @@ class DependencyInjector:
             clock=self.get_clock(),
             archivist=self.get_measurement_archivist(),
         )
+
+    def get_route_overview_use_case(self) -> GetRouteOverviewUseCase:
+        return GetRouteOverviewUseCase(archivist=self.get_measurement_archivist())

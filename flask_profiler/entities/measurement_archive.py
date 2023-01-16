@@ -58,6 +58,9 @@ class RecordedMeasurements(FiledData[Record], Protocol):
     def with_method(self, method: str) -> RecordedMeasurements:
         ...
 
+    def with_name(self, name: str) -> RecordedMeasurements:
+        ...
+
     def with_name_containing(self, substring: str) -> RecordedMeasurements:
         ...
 

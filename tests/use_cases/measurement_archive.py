@@ -67,6 +67,11 @@ class RecordedMeasurements(IteratorBasedData[Record]):
             self, items=lambda: filter(lambda i: substring in i.name, self.items())
         )
 
+    def with_name(self, name: str) -> RecordedMeasurements:
+        return replace(
+            self, items=lambda: filter(lambda i: name == i.name, self.items())
+        )
+
     def requested_after(self, t: datetime) -> RecordedMeasurements:
         return replace(
             self, items=lambda: filter(lambda i: t <= i.start_timestamp, self.items())

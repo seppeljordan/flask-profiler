@@ -136,6 +136,13 @@ class RecordResult(SelectQuery[interface.Record]):
             )
         )
 
+    def with_name(self, name: str) -> RecordResult:
+        return self._with_modified_query(
+            lambda query: query.and_where(
+                q.BinaryOp("=", q.Identifier("route_name"), q.Literal(quote(name)))
+            )
+        )
+
     def with_name_containing(self, substring: str) -> RecordResult:
         return self._with_modified_query(
             lambda query: query.and_where(
