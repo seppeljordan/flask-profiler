@@ -14,14 +14,20 @@
             inherit system;
             overlays = [ self.overlays.default ];
           };
-          pythonEnv = pkgs.python3.withPackages (p:
-            [ p.mypy p.flake8 p.isort p.black ]
-            ++ pkgs.python3.pkgs.flask-profiler.buildInputs
-            ++ pkgs.python3.pkgs.flask-profiler.propagatedBuildInputs);
-        in {
-          packages = { default = pkgs.python3.pkgs.flask-profiler; };
+          python = pkgs.python310;
+          pythonEnv =
+            python.withPackages (p: [ p.mypy p.flake8 p.isort p.black ]
+              ++ python.pkgs.flask-profiler.buildInputs
+              ++ python.pkgs.flask-profiler.propagatedBuildInputs);
+        in
+        {
+          formatter = pkgs.nixpkgs-fmt;
+          packages = {
+            default = python.pkgs.flask-profiler;
+            inherit python;
+          };
           devShells.default = pkgs.mkShell {
-            packages = with pkgs.python3.pkgs; [
+            packages = with python.pkgs; [
               black
               coverage
               flake8
@@ -30,7 +36,7 @@
               twine
               virtualenv
             ];
-            inputsFrom = [ pkgs.python3.pkgs.flask-profiler ];
+            inputsFrom = [ python.pkgs.flask-profiler ];
           };
           checks = {
             black-check = pkgs.runCommand "black-check" { } ''
@@ -53,6 +59,7 @@
               ${pythonEnv}/bin/mypy
               mkdir $out
             '';
+            python39-package = pkgs.python39.pkgs.flask-profiler;
             python310-package = pkgs.python310.pkgs.flask-profiler;
           };
         });
@@ -63,5 +70,6 @@
             ++ [ (import nix/pythonPackages.nix) ];
         };
       };
-    in systemDependent // systemIndependent;
+    in
+    systemDependent // systemIndependent;
 }

@@ -316,7 +316,7 @@ class Identifier:
         return str(self)
 
     @staticmethod
-    def escape(value: str):
+    def escape(value: str) -> str:
         escaped = value.replace('"', '""')
         return f'"{escaped}"'
 
