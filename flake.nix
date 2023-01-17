@@ -25,7 +25,7 @@
           formatter = format-source;
           packages = {
             default = python.pkgs.flask-profiler;
-            inherit python;
+            inherit python format-source;
           };
           devShells.default = pkgs.mkShell {
             packages = with python.pkgs; [
@@ -40,6 +40,7 @@
             inputsFrom = [ python.pkgs.flask-profiler ];
           };
           checks = {
+            inherit format-source;
             black-check = pkgs.runCommand "black-check" { } ''
               cd ${self}
               ${pythonEnv}/bin/black --check .

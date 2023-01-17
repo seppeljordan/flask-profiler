@@ -38,7 +38,7 @@ class FiledData(Protocol, Generic[T]):
         ...
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Record:
     id: int
     name: str
@@ -74,7 +74,7 @@ class RecordedMeasurements(FiledData[Record], Protocol):
         ...
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Summary:
     method: str
     name: str
