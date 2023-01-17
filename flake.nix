@@ -19,9 +19,10 @@
             python.withPackages (p: [ p.mypy p.flake8 p.isort p.black ]
               ++ python.pkgs.flask-profiler.buildInputs
               ++ python.pkgs.flask-profiler.propagatedBuildInputs);
+          format-source = pkgs.callPackage nix/format.nix { };
         in
         {
-          formatter = pkgs.nixpkgs-fmt;
+          formatter = format-source;
           packages = {
             default = python.pkgs.flask-profiler;
             inherit python;
