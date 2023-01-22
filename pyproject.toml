@@ -59,6 +59,10 @@ filterwarnings = [
 
 [tool.mypy]
 files = ["flask_profiler", "tests"]
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = []
 
 [[tool.mypy.overrides]]
 module = ["pymongo", "bson.*", "sqlalchemy.*", "flask_httpauth", "flask_testing", "hypothesis"]

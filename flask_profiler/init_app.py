@@ -16,7 +16,7 @@ logger = logging.getLogger("flask-profiler")
 class RouteWrapper:
     measured_route_factory: MeasuredRouteFactory
 
-    def wrap_all_routes(self, app: Flask):
+    def wrap_all_routes(self, app: Flask) -> None:
         """
         wraps all endpoints defined in the given flask app to measure how long time
         each endpoints takes while being executed. This wrapping process is

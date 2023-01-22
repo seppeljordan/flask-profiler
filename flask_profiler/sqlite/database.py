@@ -75,7 +75,7 @@ class Sqlite:
     def close_connection(self) -> None:
         self.connection.close()
 
-    def _row_to_record(self, row) -> interface.Record:
+    def _row_to_record(self, row: sqlite3.Row) -> interface.Record:
         return interface.Record(
             id=row["ID"],
             start_timestamp=datetime.fromtimestamp(

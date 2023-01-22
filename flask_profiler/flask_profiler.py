@@ -32,7 +32,7 @@ def render_response(response: HttpResponse) -> FlaskResponse:
 
 
 @auth.verify_password
-def verify_password(username, password):
+def verify_password(username: str, password: str) -> bool:
     injector = DependencyInjector()
     config = injector.get_configuration()
     if not config.is_basic_auth_enabled:
@@ -65,6 +65,6 @@ def details() -> FlaskResponse:
 
 
 @flask_profiler.after_request
-def x_robots_tag_header(response) -> FlaskResponse:
+def x_robots_tag_header(response: FlaskResponse) -> FlaskResponse:
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response

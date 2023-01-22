@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class RequestHandler:
-    def __init__(self, route_name: str, original_route) -> None:
+    def __init__(self, route_name: str, original_route: Callable) -> None:
         self.original_route = original_route
         self._name = route_name
 
@@ -35,7 +35,7 @@ class MeasuredRoute:
     use_case: use_case.ObserveRequestHandlingUseCase
     request_handler: RequestHandler
 
-    def __call__(self, *args, **kwargs) -> ResponseT:
+    def __call__(self, *args: Any, **kwargs: Any) -> ResponseT:
         logger.debug("Measuring route %s", self.request_handler.name())
         response = self.use_case.record_measurement(
             use_case.Request(

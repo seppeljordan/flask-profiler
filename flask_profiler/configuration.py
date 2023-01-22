@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Protocol
+from typing import Any, Dict, Optional, Protocol, Type
 
 from flask import Flask, g
 
@@ -63,7 +63,9 @@ class Configuration:
         return g.flask_profiler_collection
 
     @classmethod
-    def cleanup_appcontext(cls, exception) -> None:
+    def cleanup_appcontext(
+        cls: Type[Configuration], exception: Optional[BaseException]
+    ) -> None:
         logger.debug("Starting cleanup")
         db = g.pop("flask_profiler_collection", None)
         if db:
@@ -84,7 +86,7 @@ class Configuration:
             storage = MeasurementArchivistPlaceholder()
         return storage
 
-    def read_config(self):
+    def read_config(self) -> Dict[str, Any]:
         return (
             self.app.config.get("flask_profiler")
             or self.app.config.get("FLASK_PROFILER")
