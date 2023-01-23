@@ -4,16 +4,21 @@ from typing import Optional
 
 from flask import Flask, current_app
 
+from .calendar import Calendar
 from .clock import SystemClock
 from .configuration import Configuration, DeferredArchivist
 from .controllers.get_details_controller import GetDetailsController
+from .controllers.get_route_overview_controller import GetRouteOverviewController
 from .controllers.get_summary_controller import GetSummaryController
 from .measured_route import MeasuredRouteFactory
 from .presenters.get_details_presenter import GetDetailsPresenter
+from .presenters.get_route_overview_presenter import GetRouteOverviewPresenter
 from .presenters.get_summary_presenter import GetSummaryPresenter
 from .use_cases.get_details_use_case import GetDetailsUseCase
+from .use_cases.get_route_overview import GetRouteOverviewUseCase
 from .use_cases.get_summary_use_case import GetSummaryUseCase
 from .views.get_details_view import GetDetailsView
+from .views.get_route_overview_view import GetRouteOverviewView
 from .views.get_summary_view import GetSummaryView
 
 
@@ -68,3 +73,26 @@ class DependencyInjector:
             config=self.get_configuration(),
             archivist=self.get_measurement_archivist(),
         )
+
+    def get_route_overview_use_case(self) -> GetRouteOverviewUseCase:
+        return GetRouteOverviewUseCase(
+            archivist=self.get_measurement_archivist(),
+            calendar=self.get_calendar(),
+        )
+
+    def get_route_overview_controller(self) -> GetRouteOverviewController:
+        return GetRouteOverviewController(
+            use_case=self.get_route_overview_use_case(),
+            clock=self.get_clock(),
+            presenter=self.get_route_overview_presenter(),
+            view=self.get_route_overview_view(),
+        )
+
+    def get_route_overview_presenter(self) -> GetRouteOverviewPresenter:
+        return GetRouteOverviewPresenter()
+
+    def get_calendar(self) -> Calendar:
+        return Calendar()
+
+    def get_route_overview_view(self) -> GetRouteOverviewView:
+        return GetRouteOverviewView()

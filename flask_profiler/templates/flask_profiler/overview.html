@@ -1,0 +1,20 @@
+{% extends "flask_profiler/base.html" %}
+
+{% block headline %}
+{{ view_model.headline }}
+{% endblock %}
+
+{% block content %}
+
+{% for graph in view_model.graphs %}
+<h3>{{ graph.title }}</h3>
+<svg width="{{ graph.width }}" height="{{ graph.height }}">
+    {% for line in graph.lines %}
+    <line x1="{{ line.x1 }}" y1="{{ line.y1 }}" x2="{{ line.x2 }}" y2="{{ line.y2 }}" style="stroke: {{ line.color }}; stroke-width: 2"/>
+    {% endfor %}
+    {% for point in graph.points %}
+    <circle cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="{{ point.color }}" />
+    {% endfor %}
+</svg>
+{% endfor %}
+{% endblock %}

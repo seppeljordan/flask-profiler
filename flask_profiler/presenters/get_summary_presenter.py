@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import List, Optional
 from urllib.parse import ParseResult
 
+from flask import url_for
+
 from flask_profiler.pagination import PaginationContext
 from flask_profiler.request import HttpRequest
 from flask_profiler.use_cases import get_summary_use_case as use_case
@@ -68,7 +70,10 @@ class GetSummaryPresenter:
     def _render_row(self, measurement: use_case.Measurement) -> List[table.Cell]:
         return [
             table.Cell(text=measurement.method),
-            table.Cell(text=measurement.name),
+            table.Cell(
+                text=measurement.name,
+                link_target=url_for(".route_overview", route_name=measurement.name),
+            ),
             table.Cell(text=str(measurement.request_count)),
             table.Cell(
                 text=format_duration_in_ms(measurement.average_response_time_secs)

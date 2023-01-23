@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask_profiler.use_cases import get_summary_use_case as use_case
 from flask_profiler.use_cases import observe_request_handling_use_case as observe
@@ -41,7 +41,9 @@ class UseCaseTests(TestCase):
         self.clock.freeze_time(datetime(2000, 1, 2))
         self.record_request()
         request = use_case.Request(
-            limit=10, offset=10, requested_before=datetime(2000, 1, 1)
+            limit=10,
+            offset=10,
+            requested_before=datetime(2000, 1, 1, tzinfo=timezone.utc),
         )
         response = self.use_case.get_summary(request)
         assert not response.total_results

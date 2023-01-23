@@ -1,6 +1,7 @@
 import unittest
 from functools import lru_cache
 
+from flask_profiler.calendar import Calendar
 from flask_profiler.use_cases.get_details_use_case import GetDetailsUseCase
 from flask_profiler.use_cases.get_route_overview import GetRouteOverviewUseCase
 from flask_profiler.use_cases.get_summary_use_case import GetSummaryUseCase
@@ -46,5 +47,10 @@ class DependencyInjector:
             archivist=self.get_measurement_archivist(),
         )
 
+    def get_calendar(self) -> Calendar:
+        return Calendar()
+
     def get_route_overview_use_case(self) -> GetRouteOverviewUseCase:
-        return GetRouteOverviewUseCase(archivist=self.get_measurement_archivist())
+        return GetRouteOverviewUseCase(
+            archivist=self.get_measurement_archivist(), calendar=self.get_calendar()
+        )

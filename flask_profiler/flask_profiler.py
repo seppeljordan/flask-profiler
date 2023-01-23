@@ -64,6 +64,19 @@ def details() -> FlaskResponse:
     return render_response(response)
 
 
+@flask_profiler.route("/route/<route_name>")
+@auth.login_required
+def route_overview(route_name: str) -> FlaskResponse:
+    injector = DependencyInjector()
+    controller = injector.get_route_overview_controller()
+    response = controller.handle_request(
+        http_request=WrappedRequest(
+            request, flask_path_arguments=dict(route_name=route_name)
+        )
+    )
+    return render_response(response)
+
+
 @flask_profiler.after_request
 def x_robots_tag_header(response: FlaskResponse) -> FlaskResponse:
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
