@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from functools import lru_cache
 from typing import Any, Dict, Protocol
 from urllib.parse import unquote
 
