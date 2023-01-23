@@ -63,12 +63,10 @@ class ViewModel:
 @dataclass
 class GetRouteOverviewPresenter:
     def render_route_overview(self, response: use_case.Response) -> ViewModel:
-        width = 400
-        height = 400
         graphs = [
             self._render_graph(
-                width=width,
-                height=height,
+                width=400,
+                height=400,
                 start_time=response.request.start_time,
                 measurements=measurements,
                 title=method,
@@ -89,8 +87,6 @@ class GetRouteOverviewPresenter:
         measurements: List[use_case.IntervalMeasurement],
         title: str,
     ) -> Graph:
-        width = 400
-        height = 400
         points = [
             Point(
                 _x=(measurement.timestamp.date() - start_time.date()).days,
