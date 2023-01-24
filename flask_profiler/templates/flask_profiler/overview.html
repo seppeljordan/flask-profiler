@@ -10,6 +10,9 @@
 <h3>{{ graph.title }}</h3>
 <svg width="{{ graph.width }}" height="{{ graph.height }}">
     {% for line in graph.lines %}
+    {% if line.label %}
+    <text style="fill: black" text-anchor="end" x="{{ line.x1 }}" y="{{ line.y1 }}">{{ line.label }}</text>
+    {% endif %}
     <line
 	x1="{{ line.x1 }}"
 	y1="{{ line.y1 }}"

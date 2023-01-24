@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Tuple
 
 from flask_profiler.use_cases import get_route_overview as use_case
 
@@ -27,6 +28,7 @@ class Line:
     p1: Point
     p2: Point
     color: str = "black"
+    label: Optional[str] = None
 
     @property
     def x1(self) -> str:
@@ -67,6 +69,7 @@ class GetRouteOverviewPresenter:
             self._render_graph(
                 width=400,
                 height=400,
+                left_border=100,
                 start_time=response.request.start_time,
                 measurements=measurements,
                 title=method,
@@ -83,6 +86,7 @@ class GetRouteOverviewPresenter:
         *,
         width: float,
         height: float,
+        left_border: float,
         start_time: datetime,
         measurements: List[use_case.IntervalMeasurement],
         title: str,
@@ -95,10 +99,13 @@ class GetRouteOverviewPresenter:
             for measurement in measurements
             if measurement.value is not None
         ]
-        max_value = max(p._y for p in points)
-        unify_points = Conversion.stretch(x=1 / len(measurements), y=1 / max_value)
-        normalized_points = [unify_points.transform_point(p) for p in points]
-        normalized_lines = [
+        max_value, markings_count = self._get_max_scale_value(max(p._y for p in points))
+        normalize_values = Conversion.stretch(y=1 / max_value)
+        normalize_points = Conversion.stretch(x=1 / len(measurements)).concat(
+            normalize_values
+        )
+        normalized_points = [normalize_points.transform_point(p) for p in points]
+        axis = [
             Line(
                 Point(_x=0, _y=0),
                 Point(_x=0, _y=1),
@@ -107,10 +114,16 @@ class GetRouteOverviewPresenter:
                 Point(_x=0, _y=0),
                 Point(_x=1, _y=0),
             ),
-        ] + [
+        ]
+        graph_lines = [
             Line(p1, p2, color="blue")
             for p1, p2 in zip(normalized_points[:-1], normalized_points[1:])
         ]
+        axis_markings = [
+            normalize_values.transform_line(marking)
+            for marking in self._generate_markings(max_value, markings_count)
+        ]
+        normalized_lines = axis + axis_markings + graph_lines
         transformation = (
             Conversion.mirror_y()
             .concat(Conversion.translation(y=1))
@@ -118,17 +131,38 @@ class GetRouteOverviewPresenter:
             .concat(Conversion.translation(x=-width / 2, y=-height / 2))
             .concat(Conversion.stretch(x=0.9, y=0.9))
             .concat(Conversion.translation(x=width / 2, y=height / 2))
+            .concat(Conversion.translation(x=left_border))
         )
-        transformed_points = [
-            transformation.transform_point(p) for p in normalized_points
-        ]
         return Graph(
             title=title,
-            width=str(width),
+            width=str(width + left_border),
             height=str(height),
-            points=transformed_points,
+            points=[transformation.transform_point(p) for p in normalized_points],
             lines=[transformation.transform_line(line) for line in normalized_lines],
         )
+
+    def _generate_markings(
+        self, scale_max_value: float, markings_count: int
+    ) -> List[Line]:
+        dx = 0.01
+        return [
+            Line(
+                Point(_x=0 - dx, _y=n / markings_count * scale_max_value),
+                Point(_x=0 + dx, _y=n / markings_count * scale_max_value),
+                label=f"{n/markings_count * scale_max_value * 1000:.2f} ms",
+            )
+            for n in range(1, markings_count + 1)
+        ]
+
+    def _get_max_scale_value(self, value: float) -> Tuple[float, int]:
+        factor = 1.0
+        while value < 1:
+            factor *= 0.1
+            value *= 10
+        while value > 10:
+            factor *= 10
+            value *= 0.1
+        return factor * math.ceil(value), math.ceil(value)
 
 
 @dataclass
