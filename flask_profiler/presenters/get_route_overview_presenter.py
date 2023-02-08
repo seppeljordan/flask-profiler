@@ -3,9 +3,15 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Protocol, Tuple
 
+from flask_profiler.response import HttpResponse
 from flask_profiler.use_cases import get_route_overview as use_case
+
+
+class View(Protocol):
+    def render_view_model(self, view_model: ViewModel) -> HttpResponse:
+        ...
 
 
 @dataclass
@@ -64,7 +70,9 @@ class ViewModel:
 
 @dataclass
 class GetRouteOverviewPresenter:
-    def render_route_overview(self, response: use_case.Response) -> ViewModel:
+    view: View
+
+    def present_response(self, response: use_case.Response) -> HttpResponse:
         graphs = [
             self._render_graph(
                 width=400,
@@ -76,10 +84,11 @@ class GetRouteOverviewPresenter:
             )
             for method, measurements in response.timeseries.items()
         ]
-        return ViewModel(
+        view_model = ViewModel(
             headline=f"Route overview for {response.request.route_name}",
             graphs=graphs,
         )
+        return self.view.render_view_model(view_model)
 
     def _render_graph(
         self,

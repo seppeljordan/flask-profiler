@@ -39,11 +39,12 @@ class DependencyInjector:
         return GetSummaryController(
             use_case=self.get_summary_use_case(),
             presenter=self.get_summary_presenter(),
-            view=self.get_summary_view(),
         )
 
     def get_summary_presenter(self) -> GetSummaryPresenter:
-        return GetSummaryPresenter()
+        return GetSummaryPresenter(
+            view=self.get_summary_view(),
+        )
 
     def get_summary_view(self) -> GetSummaryView:
         return GetSummaryView()
@@ -51,7 +52,6 @@ class DependencyInjector:
     def get_details_controller(self) -> GetDetailsController:
         return GetDetailsController(
             use_case=self.get_details_use_case(),
-            view=self.get_details_view(),
             presenter=self.get_details_presenter(),
         )
 
@@ -59,7 +59,9 @@ class DependencyInjector:
         return GetDetailsUseCase(archivist=self.get_measurement_archivist())
 
     def get_details_presenter(self) -> GetDetailsPresenter:
-        return GetDetailsPresenter()
+        return GetDetailsPresenter(
+            view=self.get_details_view(),
+        )
 
     def get_details_view(self) -> GetDetailsView:
         return GetDetailsView()
@@ -85,11 +87,12 @@ class DependencyInjector:
             use_case=self.get_route_overview_use_case(),
             clock=self.get_clock(),
             presenter=self.get_route_overview_presenter(),
-            view=self.get_route_overview_view(),
         )
 
     def get_route_overview_presenter(self) -> GetRouteOverviewPresenter:
-        return GetRouteOverviewPresenter()
+        return GetRouteOverviewPresenter(
+            view=self.get_route_overview_view(),
+        )
 
     def get_calendar(self) -> Calendar:
         return Calendar()

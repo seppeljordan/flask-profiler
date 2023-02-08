@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Protocol
 
 from flask import url_for
 
 from flask_profiler.pagination import PaginationContext
 from flask_profiler.request import HttpRequest
+from flask_profiler.response import HttpResponse
 from flask_profiler.use_cases import get_details_use_case as use_case
 
 from . import table
@@ -19,23 +23,32 @@ HEADERS = [
 ]
 
 
-class GetDetailsPresenter:
-    @dataclass
-    class ViewModel:
-        table: table.Table
-        pagination: Paginator
-        method_filter_text: str
-        name_filter_text: str
-        requested_after_filter_text: str
-        requested_before_filter_text: str
+class View(Protocol):
+    def render_view_model(self, view_model: ViewModel) -> HttpResponse:
+        ...
 
-    def render_details(
+
+@dataclass
+class ViewModel:
+    table: table.Table
+    pagination: Paginator
+    method_filter_text: str
+    name_filter_text: str
+    requested_after_filter_text: str
+    requested_before_filter_text: str
+
+
+@dataclass
+class GetDetailsPresenter:
+    view: View
+
+    def present_response(
         self,
         response: use_case.Response,
         pagination: PaginationContext,
         http_request: HttpRequest,
-    ) -> ViewModel:
-        return self.ViewModel(
+    ) -> HttpResponse:
+        view_model = ViewModel(
             table=table.Table(
                 headers=HEADERS,
                 rows=[
@@ -72,3 +85,4 @@ class GetDetailsPresenter:
             if response.request.requested_before is None
             else response.request.requested_before.isoformat(),
         )
+        return self.view.render_view_model(view_model)
