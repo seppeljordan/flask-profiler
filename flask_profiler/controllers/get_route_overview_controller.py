@@ -9,8 +9,6 @@ from flask_profiler.request import HttpRequest
 from flask_profiler.response import HttpResponse
 from flask_profiler.use_cases import get_route_overview as uc
 
-from .controller import Controller
-
 
 class Presenter(Protocol):
     def present_response(self, response: uc.Response) -> HttpResponse:
@@ -18,13 +16,14 @@ class Presenter(Protocol):
 
 
 @dataclass
-class GetRouteOverviewController(Controller):
+class GetRouteOverviewController:
     use_case: uc.GetRouteOverviewUseCase
     clock: Clock
     presenter: Presenter
+    http_request: HttpRequest
 
-    def handle_request(self, http_request: HttpRequest) -> HttpResponse:
-        route_name = http_request.path_arguments()["route_name"]
+    def handle_request(self) -> HttpResponse:
+        route_name = self.http_request.path_arguments()["route_name"]
         assert isinstance(route_name, str)
         end_timestamp = self.clock.utc_now() + timedelta(days=1)
         start_timestamp = end_timestamp - timedelta(days=30)

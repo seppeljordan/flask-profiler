@@ -10,27 +10,25 @@ from flask_profiler.response import HttpResponse
 from flask_profiler.use_cases import get_details_use_case as use_case
 from flask_profiler.use_cases.get_details_use_case import GetDetailsUseCase
 
-from .controller import Controller
-
 
 class Presenter(Protocol):
     def present_response(
         self,
         response: use_case.Response,
         pagination: PaginationContext,
-        http_request: HttpRequest,
     ) -> HttpResponse:
         ...
 
 
 @dataclass
-class GetDetailsController(Controller):
+class GetDetailsController:
     use_case: GetDetailsUseCase
     presenter: Presenter
+    http_request: HttpRequest
 
-    def handle_request(self, http_request: HttpRequest) -> HttpResponse:
-        pagination_context = self.get_pagination_context(http_request)
-        form_data = FilterFormData.parse_from_from(http_request.get_arguments())
+    def handle_request(self) -> HttpResponse:
+        pagination_context = self.get_pagination_context()
+        form_data = FilterFormData.parse_from_from(self.http_request.get_arguments())
         request = use_case.Request(
             limit=pagination_context.get_limit(),
             offset=pagination_context.get_offset(),
@@ -41,11 +39,11 @@ class GetDetailsController(Controller):
         )
         response = self.use_case.get_details(request)
         return self.presenter.present_response(
-            response=response, pagination=pagination_context, http_request=http_request
+            response=response, pagination=pagination_context
         )
 
-    def get_pagination_context(self, request: HttpRequest) -> PaginationContext:
-        request_args = request.get_arguments()
+    def get_pagination_context(self) -> PaginationContext:
+        request_args = self.http_request.get_arguments()
         current_page = int(request_args.get(PAGE_QUERY_ARGUMENT, "1"))
         return PaginationContext(
             current_page=current_page,

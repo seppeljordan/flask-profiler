@@ -45,12 +45,12 @@ class ViewModel:
 @dataclass
 class GetSummaryPresenter:
     view: View
+    http_request: HttpRequest
 
     def render_summary(
         self,
         response: use_case.Response,
         pagination: PaginationContext,
-        http_request: HttpRequest,
     ) -> HttpResponse:
         view_model = ViewModel(
             table=table.Table(
@@ -64,7 +64,7 @@ class GetSummaryPresenter:
                 total_page_count=pagination.get_total_pages_count(
                     response.total_results
                 ),
-                target_link=self.get_pagination_target_link(http_request),
+                target_link=self.get_pagination_target_link(),
             ),
             method_filter_text=response.request.method or "",
             name_filter_text=response.request.name_filter or "",
@@ -77,8 +77,8 @@ class GetSummaryPresenter:
         )
         return self.view.render_view_model(view_model)
 
-    def get_pagination_target_link(self, http_request: HttpRequest) -> ParseResult:
-        return get_url_with_query(".summary", http_request.get_arguments())
+    def get_pagination_target_link(self) -> ParseResult:
+        return get_url_with_query(".summary", self.http_request.get_arguments())
 
     def _render_row(self, measurement: use_case.Measurement) -> List[table.Cell]:
         return [

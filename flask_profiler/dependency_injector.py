@@ -24,6 +24,10 @@ from .views.get_summary_view import GetSummaryView
 
 
 class DependencyInjector:
+    """Instances of DependencyInjector are only meant to live for
+    lifetime of a request.
+    """
+
     def __init__(self, *, app: Optional[Flask] = None) -> None:
         self.app = app or current_app
 
@@ -40,11 +44,13 @@ class DependencyInjector:
         return GetSummaryController(
             use_case=self.get_summary_use_case(),
             presenter=self.get_summary_presenter(),
+            http_request=self.get_http_request(),
         )
 
     def get_summary_presenter(self) -> GetSummaryPresenter:
         return GetSummaryPresenter(
             view=self.get_summary_view(),
+            http_request=self.get_http_request(),
         )
 
     def get_summary_view(self) -> GetSummaryView:
@@ -54,6 +60,7 @@ class DependencyInjector:
         return GetDetailsController(
             use_case=self.get_details_use_case(),
             presenter=self.get_details_presenter(),
+            http_request=self.get_http_request(),
         )
 
     def get_details_use_case(self) -> GetDetailsUseCase:
@@ -62,6 +69,7 @@ class DependencyInjector:
     def get_details_presenter(self) -> GetDetailsPresenter:
         return GetDetailsPresenter(
             view=self.get_details_view(),
+            http_request=self.get_http_request(),
         )
 
     def get_details_view(self) -> GetDetailsView:
@@ -88,6 +96,7 @@ class DependencyInjector:
             use_case=self.get_route_overview_use_case(),
             clock=self.get_clock(),
             presenter=self.get_route_overview_presenter(),
+            http_request=self.get_http_request(),
         )
 
     def get_route_overview_presenter(self) -> GetRouteOverviewPresenter:

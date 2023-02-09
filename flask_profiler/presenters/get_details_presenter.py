@@ -41,12 +41,12 @@ class ViewModel:
 @dataclass
 class GetDetailsPresenter:
     view: View
+    http_request: HttpRequest
 
     def present_response(
         self,
         response: use_case.Response,
         pagination: PaginationContext,
-        http_request: HttpRequest,
     ) -> HttpResponse:
         view_model = ViewModel(
             table=table.Table(
@@ -70,7 +70,7 @@ class GetDetailsPresenter:
             ),
             pagination=Paginator(
                 target_link=get_url_with_query(
-                    ".details", http_request.get_arguments()
+                    ".details", self.http_request.get_arguments()
                 ),
                 total_page_count=pagination.get_total_pages_count(
                     response.total_result_count
