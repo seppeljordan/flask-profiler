@@ -4,7 +4,6 @@ import logging
 
 from flask import Blueprint
 from flask import Response as FlaskResponse
-from flask import request
 from flask_httpauth import HTTPBasicAuth
 
 from .dependency_injector import DependencyInjector
@@ -51,7 +50,7 @@ def verify_password(username: str, password: str) -> bool:
 def summary() -> FlaskResponse:
     injector = DependencyInjector()
     controller = injector.get_summary_controller()
-    response = controller.handle_request(http_request=WrappedRequest(request))
+    response = controller.handle_request(http_request=WrappedRequest())
     return render_response(response)
 
 
@@ -60,7 +59,7 @@ def summary() -> FlaskResponse:
 def details() -> FlaskResponse:
     injector = DependencyInjector()
     controller = injector.get_details_controller()
-    response = controller.handle_request(http_request=WrappedRequest(request))
+    response = controller.handle_request(http_request=WrappedRequest())
     return render_response(response)
 
 
@@ -69,11 +68,7 @@ def details() -> FlaskResponse:
 def route_overview(route_name: str) -> FlaskResponse:
     injector = DependencyInjector()
     controller = injector.get_route_overview_controller()
-    response = controller.handle_request(
-        http_request=WrappedRequest(
-            request, flask_path_arguments=dict(route_name=route_name)
-        )
-    )
+    response = controller.handle_request(http_request=WrappedRequest())
     return render_response(response)
 
 

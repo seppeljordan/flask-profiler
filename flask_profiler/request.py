@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Protocol
 from urllib.parse import unquote
 
-from flask import Request
+from flask import request
 
 
 class HttpRequest(Protocol):
@@ -15,11 +15,8 @@ class HttpRequest(Protocol):
 
 @dataclass(frozen=True)
 class WrappedRequest:
-    request: Request
-    flask_path_arguments: Dict[str, Any] = field(default_factory=dict)
-
     def get_arguments(self) -> Dict[str, str]:
-        return {key: unquote(value) for key, value in self.request.args.items()}
+        return {key: unquote(value) for key, value in request.args.items()}
 
     def path_arguments(self) -> Dict[str, Any]:
-        return self.flask_path_arguments
+        return request.view_args or dict()

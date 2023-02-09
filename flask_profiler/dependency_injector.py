@@ -14,6 +14,7 @@ from .measured_route import MeasuredRouteFactory
 from .presenters.get_details_presenter import GetDetailsPresenter
 from .presenters.get_route_overview_presenter import GetRouteOverviewPresenter
 from .presenters.get_summary_presenter import GetSummaryPresenter
+from .request import WrappedRequest
 from .use_cases.get_details_use_case import GetDetailsUseCase
 from .use_cases.get_route_overview import GetRouteOverviewUseCase
 from .use_cases.get_summary_use_case import GetSummaryUseCase
@@ -99,3 +100,6 @@ class DependencyInjector:
 
     def get_route_overview_view(self) -> GetRouteOverviewView:
         return GetRouteOverviewView()
+
+    def get_http_request(self) -> WrappedRequest:
+        return WrappedRequest()
