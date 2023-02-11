@@ -64,8 +64,14 @@ def summary() -> FlaskResponse:
 def details() -> FlaskResponse:
     injector = DependencyInjector()
     controller = injector.get_details_controller()
-    response = controller.handle_request()
-    return render_response(response)
+    use_case = injector.get_details_use_case()
+    presenter = injector.get_details_presenter()
+    view = injector.get_details_view()
+    uc_request = controller.process_request()
+    uc_response = use_case.get_details(uc_request)
+    view_model = presenter.present_response(uc_response, controller.pagination_context)
+    http_response = view.render_view_model(view_model)
+    return render_response(http_response)
 
 
 @flask_profiler.route("/route/<route_name>")

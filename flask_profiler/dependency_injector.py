@@ -55,8 +55,6 @@ class DependencyInjector:
 
     def get_details_controller(self) -> GetDetailsController:
         return GetDetailsController(
-            use_case=self.get_details_use_case(),
-            presenter=self.get_details_presenter(),
             http_request=self.get_http_request(),
         )
 
@@ -65,7 +63,6 @@ class DependencyInjector:
 
     def get_details_presenter(self) -> GetDetailsPresenter:
         return GetDetailsPresenter(
-            view=self.get_details_view(),
             http_request=self.get_http_request(),
         )
 
