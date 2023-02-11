@@ -42,14 +42,11 @@ class DependencyInjector:
 
     def get_summary_controller(self) -> GetSummaryController:
         return GetSummaryController(
-            use_case=self.get_summary_use_case(),
-            presenter=self.get_summary_presenter(),
             http_request=self.get_http_request(),
         )
 
     def get_summary_presenter(self) -> GetSummaryPresenter:
         return GetSummaryPresenter(
-            view=self.get_summary_view(),
             http_request=self.get_http_request(),
         )
 

@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional, Protocol
+from typing import List, Optional
 from urllib.parse import ParseResult
 
 from flask import url_for
 
 from flask_profiler.pagination import PaginationContext
 from flask_profiler.request import HttpRequest
-from flask_profiler.response import HttpResponse
 from flask_profiler.use_cases import get_summary_use_case as use_case
 
 from . import table
@@ -27,11 +26,6 @@ HEADERS = [
 ]
 
 
-class View(Protocol):
-    def render_view_model(self, view_model: ViewModel) -> HttpResponse:
-        ...
-
-
 @dataclass
 class ViewModel:
     table: table.Table
@@ -44,14 +38,13 @@ class ViewModel:
 
 @dataclass
 class GetSummaryPresenter:
-    view: View
     http_request: HttpRequest
 
     def render_summary(
         self,
         response: use_case.Response,
         pagination: PaginationContext,
-    ) -> HttpResponse:
+    ) -> ViewModel:
         view_model = ViewModel(
             table=table.Table(
                 headers=HEADERS,
@@ -75,7 +68,7 @@ class GetSummaryPresenter:
                 response.request.requested_before
             ),
         )
-        return self.view.render_view_model(view_model)
+        return view_model
 
     def get_pagination_target_link(self) -> ParseResult:
         return get_url_with_query(".summary", self.http_request.get_arguments())
