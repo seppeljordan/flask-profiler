@@ -38,7 +38,7 @@ class BasicAuthTests(TestCase):
         assert self.client.get("/").status_code == 200
         assert self.client.get("/profiling/route/hello_world").status_code == 200
 
-    def test_cannot_access_a_routes_overview_page_for_a_non_existing_route(
+    def test_trying_to_access_route_details_for_non_existing_route_returns_200(
         self,
     ) -> None:
-        assert self.client.get("/profiling/route/i-dont-exist").status_code == 404
+        assert self.client.get("/profiling/route/i-dont-exist").status_code == 200

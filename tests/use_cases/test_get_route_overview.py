@@ -34,12 +34,11 @@ class GetRouteOverviewTests(TestCase):
         response = self.use_case.get_route_overview(request)
         assert response.request == request
 
-    def test_that_value_error_is_raised_if_route_was_never_measured(
+    def test_can_request_measurements_for_route_that_was_never_measured(
         self,
     ) -> None:
         request = self.create_request()
-        with self.assertRaises(ValueError):
-            self.use_case.get_route_overview(request)
+        self.use_case.get_route_overview(request)
 
     def test_can_specify_interval_daily(self) -> None:
         self.record_measurement()
@@ -56,14 +55,6 @@ class GetRouteOverviewTests(TestCase):
         request = self.create_request()
         response = self.use_case.get_route_overview(request)
         assert response.timeseries
-
-    def test_value_error_is_raised_if_only_measurements_for_other_routes_were_recorded(
-        self,
-    ) -> None:
-        self.record_measurement()
-        request = self.create_request(name="other route")
-        with self.assertRaises(ValueError):
-            self.use_case.get_route_overview(request)
 
     def test_that_timeseries_contain_an_entry_for_method_that_was_observed(
         self,

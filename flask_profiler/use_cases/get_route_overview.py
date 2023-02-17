@@ -42,8 +42,6 @@ class GetRouteOverviewUseCase:
     def get_route_overview(self, request: Request) -> Response:
         timeseries: Dict[str, List[IntervalMeasurement]] = dict()
         measurements = self.archivist.get_records().with_name(request.route_name)
-        if not measurements:
-            raise ValueError()
         for summary in measurements.summarize():
             method = summary.method
             if request.start_time and request.end_time:
