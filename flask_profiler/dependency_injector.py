@@ -24,7 +24,7 @@ from .views.get_summary_view import GetSummaryView
 
 
 class DependencyInjector:
-    """Instances of DependencyInjector are only meant to live for
+    """Instances of DependencyInjector are only meant to live for the
     lifetime of a request.
     """
 
@@ -87,16 +87,12 @@ class DependencyInjector:
 
     def get_route_overview_controller(self) -> GetRouteOverviewController:
         return GetRouteOverviewController(
-            use_case=self.get_route_overview_use_case(),
             clock=self.get_clock(),
-            presenter=self.get_route_overview_presenter(),
             http_request=self.get_http_request(),
         )
 
     def get_route_overview_presenter(self) -> GetRouteOverviewPresenter:
-        return GetRouteOverviewPresenter(
-            view=self.get_route_overview_view(),
-        )
+        return GetRouteOverviewPresenter()
 
     def get_calendar(self) -> Calendar:
         return Calendar()

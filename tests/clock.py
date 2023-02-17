@@ -15,6 +15,7 @@ class FakeClock:
         self.frozen_time = None
 
     def advance_clock(self, dt: timedelta) -> None:
+        assert dt >= timedelta(seconds=0)
         if self.frozen_time:
             self.frozen_time += dt
 
