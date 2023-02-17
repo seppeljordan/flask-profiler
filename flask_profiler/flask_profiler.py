@@ -83,15 +83,7 @@ def route_overview(route_name: str) -> FlaskResponse:
     presenter = injector.get_route_overview_presenter()
     view = injector.get_route_overview_view()
     uc_request = controller.handle_request()
-    try:
-        uc_response = use_case.get_route_overview(uc_request)
-    except ValueError:
-        return render_response(
-            HttpResponse(
-                status_code=404,
-                content="NOT FOUND",
-            )
-        )
+    uc_response = use_case.get_route_overview(uc_request)
     view_model = presenter.present_response(uc_response)
     return render_response(view.render_view_model(view_model))
 
