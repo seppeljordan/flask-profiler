@@ -170,3 +170,90 @@ class GetRecordsTests(SqliteTests):
         summary = self.db.get_records().summarize()
         route_summary = list(summary)[0]
         assert route_summary.last_measurement == expected_datetime
+
+
+class SummarizeByIntervalTests(SqliteTests):
+    def test_with_empty_db_no_summaries_are_returned(self) -> None:
+        summaries = self.db.get_records().summarize_by_interval(
+            [datetime(2000, 1, 1), datetime(2100, 1, 1)]
+        )
+        assert not summaries
+
+    def test_get_two_summaries_if_one_value_is_in_either_of_two_intervals(self) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2050, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        summaries = self.db.get_records().summarize_by_interval(
+            [
+                datetime(2000, 1, 1, tzinfo=timezone.utc),
+                datetime(2050, 1, 1, tzinfo=timezone.utc),
+                datetime(2100, 1, 1, tzinfo=timezone.utc),
+            ]
+        )
+        assert len(summaries) == 2
+
+    def test_that_values_outside_of_interval_are_ignored(self) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2050, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2150, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(1900, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        summaries = self.db.get_records().summarize_by_interval(
+            [
+                datetime(2000, 1, 1, tzinfo=timezone.utc),
+                datetime(2050, 1, 1, tzinfo=timezone.utc),
+                datetime(2100, 1, 1, tzinfo=timezone.utc),
+            ]
+        )
+        assert len(summaries) == 2
+
+    def test_that_first_summary_contains_2_values_if_two_values_are_before_first_interval_break(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 1, 3, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2050, 1, 2, tzinfo=timezone.utc)
+            )
+        )
+        summary_1, summary_2 = list(
+            self.db.get_records().summarize_by_interval(
+                [
+                    datetime(2000, 1, 1, tzinfo=timezone.utc),
+                    datetime(2050, 1, 1, tzinfo=timezone.utc),
+                    datetime(2100, 1, 1, tzinfo=timezone.utc),
+                ]
+            )
+        )
+        assert summary_1.count == 2

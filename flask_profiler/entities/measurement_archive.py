@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Generic, Iterator, Protocol, TypeVar
+from typing import Generic, Iterator, List, Protocol, TypeVar
 
 FiledDataT = TypeVar("FiledDataT", bound="FiledData")
 T = TypeVar("T", covariant=True)
@@ -54,6 +54,15 @@ class Record:
 class RecordedMeasurements(FiledData[Record], Protocol):
     def summarize(self) -> SummarizedMeasurements:
         ...
+
+    def summarize_by_interval(
+        self, timestamps: List[datetime]
+    ) -> SummarizedMeasurements:
+        """The provided timestamp list must have at least 2 entries
+        marking the start and the end of the requested time intervals
+        that will be summarized.  The supplied list is assumed to be
+        ordered ascendingly.
+        """
 
     def with_method(self, method: str) -> RecordedMeasurements:
         ...

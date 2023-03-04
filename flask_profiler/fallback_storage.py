@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterator
+from typing import Iterator, List
 
 from flask_profiler.entities import measurement_archive as archive
 
@@ -34,6 +34,11 @@ class RecordedMeasurementsPlaceholder:
         return 0
 
     def summarize(self) -> SummarizedMeasurementsPlaceholder:
+        return SummarizedMeasurementsPlaceholder()
+
+    def summarize_by_interval(
+        self, timestamps: List[datetime]
+    ) -> SummarizedMeasurementsPlaceholder:
         return SummarizedMeasurementsPlaceholder()
 
     def with_method(self, method: str) -> RecordedMeasurementsPlaceholder:

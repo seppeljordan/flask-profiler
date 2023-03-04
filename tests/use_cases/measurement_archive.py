@@ -87,6 +87,18 @@ class RecordedMeasurements(IteratorBasedData[Record]):
             items=lambda: iter(SummaryBuilder.from_iterator(self.items()))
         )
 
+    def summarize_by_interval(
+        self, timestamps: List[datetime]
+    ) -> SummarizedMeasurements:
+        return SummarizedMeasurements(
+            items=lambda: iter(
+                IntervalSummaryBuilder.from_iterator(
+                    self.items(),
+                    timestamps=timestamps,
+                )
+            ),
+        )
+
     def with_id(self, id_: int) -> RecordedMeasurements:
         return replace(self, items=lambda: filter(lambda i: i.id == id_, self.items()))
 
@@ -95,15 +107,16 @@ class SummarizedMeasurements(IteratorBasedData[Summary]):
     pass
 
 
-@dataclass(frozen=True)
-class SummaryKey:
-    method: str
-    name: str
-
-
 class SummaryBuilder:
+    @dataclass(frozen=True)
+    class SummaryKey:
+        method: str
+        name: str
+
     def __init__(self) -> None:
-        self.summaries: Dict[SummaryKey, List[Record]] = defaultdict(list)
+        self.summaries: Dict[SummaryBuilder.SummaryKey, List[Record]] = defaultdict(
+            list
+        )
 
     def add_record(self, record: Record) -> None:
         self.summaries[self.record_key(record)].append(record)
@@ -132,7 +145,65 @@ class SummaryBuilder:
             )
 
     def record_key(self, record: Record) -> SummaryKey:
-        return SummaryKey(
+        return self.SummaryKey(
             name=record.name,
             method=record.method,
+        )
+
+
+class IntervalSummaryBuilder:
+    @dataclass(frozen=True)
+    class SummaryKey:
+        method: str
+        name: str
+        interval_index: int
+
+    def __init__(self, timestamps: List[datetime]) -> None:
+        self.summaries: Dict[
+            IntervalSummaryBuilder.SummaryKey, List[Record]
+        ] = defaultdict(list)
+        self.timestamps = timestamps
+
+    def add_record(self, record: Record) -> None:
+        self.summaries[self.record_key(record)].append(record)
+
+    @classmethod
+    def from_iterator(
+        cls, records: Iterator[Record], timestamps: List[datetime]
+    ) -> IntervalSummaryBuilder:
+        builder = cls(timestamps)
+        for r in records:
+            if (
+                r.start_timestamp < builder.timestamps[0]
+                or r.start_timestamp >= builder.timestamps[-1]
+            ):
+                continue
+            builder.add_record(r)
+        return builder
+
+    def __iter__(self) -> Iterator[Summary]:
+        for key, records in self.summaries.items():
+            elapsed_times = [r.elapsed for r in records]
+            first_measurement = min(map(lambda r: r.start_timestamp, records))
+            last_measurement = max(map(lambda r: r.start_timestamp, records))
+            yield Summary(
+                name=key.name,
+                method=key.method,
+                min_elapsed=min(elapsed_times),
+                max_elapsed=max(elapsed_times),
+                avg_elapsed=sum(elapsed_times) / len(elapsed_times),
+                count=len(elapsed_times),
+                first_measurement=first_measurement,
+                last_measurement=last_measurement,
+            )
+
+    def record_key(self, record: Record) -> SummaryKey:
+        interval_index = 0
+        for timestamp in self.timestamps:
+            if record.start_timestamp >= timestamp:
+                interval_index += 1
+        return self.SummaryKey(
+            name=record.name,
+            method=record.method,
+            interval_index=interval_index,
         )

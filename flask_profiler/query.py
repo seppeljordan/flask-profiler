@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import enum
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any, List, Optional, Protocol, Union
 
 
@@ -262,6 +262,18 @@ class PrimaryKey:
 
 
 @dataclass
+class Function:
+    name: str
+    operands: List[Expression] = field(default_factory=list)
+
+    def as_expression(self) -> str:
+        expression = self.name + "("
+        expression += ", ".join(map(lambda o: o.as_expression(), self.operands))
+        expression += ")"
+        return expression
+
+
+@dataclass
 class BinaryOp:
     operator: str
     x: Expression
@@ -468,3 +480,13 @@ class Join:
 
     def as_from_clause(self) -> str:
         return str(self)
+
+
+@dataclass
+class If:
+    condition: Expression
+    consequence: Expression
+    alternative: Expression
+
+    def as_expression(self) -> str:
+        return f"CASE WHEN {self.condition.as_expression()} THEN {self.consequence.as_expression()} ELSE {self.alternative.as_expression()} END"
