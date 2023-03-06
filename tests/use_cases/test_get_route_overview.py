@@ -56,37 +56,22 @@ class GetRouteOverviewTests(TestCase):
         response = self.use_case.get_route_overview(request)
         assert response.timeseries
 
-    def test_that_timeseries_contain_an_entry_for_method_that_was_observed(
+    def test_that_timeseries_contains_an_entry_for_method_that_was_observed(
         self,
     ) -> None:
         self.record_measurement(method="POST")
         request = self.create_request()
         response = self.use_case.get_route_overview(request)
-        assert response.timeseries["POST"]
+        assert response.timeseries["POST"] is not None
 
-    def test_that_there_is_one_datapoint_in_timeseries_for_every_day_in_requested_date_interval(
+    def test_that_there_is_only_one_datapoint_in_response_if_one_measurement_was_observed(
         self,
     ) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 1))
         self.record_measurement(method="GET")
-        request = self.create_request(
-            interval=use_case.Interval.daily,
-            start_time=datetime(2000, 1, 1),
-            end_time=datetime(2000, 1, 4),
-        )
+        request = self.create_request()
         response = self.use_case.get_route_overview(request)
-        assert len(response.timeseries["GET"]) == 3
-
-    def test_that_without_a_measurement_on_a_specific_day_the_measurement_value_is_none(
-        self,
-    ) -> None:
-        self.record_measurement(method="GET", duration=timedelta(seconds=3))
-        request = self.create_request(
-            interval=use_case.Interval.daily,
-            start_time=datetime(2000, 1, 1),
-            end_time=datetime(2000, 1, 2),
-        )
-        response = self.use_case.get_route_overview(request)
-        assert response.timeseries["GET"][0].value is None
+        assert len(response.timeseries["GET"]) == 1
 
     def test_that_with_only_one_measurement_on_a_specific_day_the_value_on_that_day_is_the_duration_of_that_measurement_in_seconds(
         self,

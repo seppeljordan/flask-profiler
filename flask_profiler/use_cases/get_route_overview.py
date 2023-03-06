@@ -49,8 +49,14 @@ class GetRouteOverviewUseCase:
                     since=request.start_time.date(), until=request.end_time.date()
                 )
                 timeseries[method] = [
-                    self._get_daily_measurement(measurements, date, method)
+                    measurement
                     for date in interval
+                    if (
+                        measurement := self._get_daily_measurement(
+                            measurements, date, method
+                        )
+                    ).value
+                    is not None
                 ]
             else:
                 timeseries[method] = [

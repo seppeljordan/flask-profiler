@@ -70,6 +70,7 @@ class GetRouteOverviewPresenter:
                 height=400,
                 left_border=100,
                 start_time=response.request.start_time,
+                end_time=response.request.end_time,
                 measurements=measurements,
                 title=method,
             )
@@ -88,9 +89,11 @@ class GetRouteOverviewPresenter:
         height: float,
         left_border: float,
         start_time: datetime,
+        end_time: datetime,
         measurements: List[use_case.IntervalMeasurement],
         title: str,
     ) -> Graph:
+        interval_length_in_days = (end_time.date() - start_time.date()).days
         points = [
             Point(
                 _x=(measurement.timestamp.date() - start_time.date()).days,
@@ -101,7 +104,7 @@ class GetRouteOverviewPresenter:
         ]
         max_value, markings_count = self._get_max_scale_value(max(p._y for p in points))
         normalize_values = Conversion.stretch(y=1 / max_value)
-        normalize_points = Conversion.stretch(x=1 / len(measurements)).concat(
+        normalize_points = Conversion.stretch(x=1 / interval_length_in_days).concat(
             normalize_values
         )
         normalized_points = [normalize_points.transform_point(p) for p in points]
