@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import enum
 from dataclasses import dataclass, field, replace
-from typing import Any, List, Optional, Protocol, Union
+from typing import Any, List, Optional, Protocol, Tuple, Union
 
 
 class Expression(Protocol):
@@ -490,3 +490,21 @@ class If:
 
     def as_expression(self) -> str:
         return f"CASE WHEN {self.condition.as_expression()} THEN {self.consequence.as_expression()} ELSE {self.alternative.as_expression()} END"
+
+
+@dataclass
+class Case:
+    cases: List[Tuple[Expression, Expression]]
+    alternative: Optional[Expression] = None
+
+    def as_expression(self) -> str:
+        conditions = [
+            f"WHEN {case[0].as_expression()} THEN {case[1].as_expression()}"
+            for case in self.cases
+        ]
+        alternative = (
+            f"ELSE {self.alternative.as_expression()}"
+            if self.alternative is not None
+            else ""
+        )
+        return "CASE " + " ".join(conditions) + " " + alternative + " END"

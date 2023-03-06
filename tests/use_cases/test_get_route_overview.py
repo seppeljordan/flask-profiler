@@ -51,6 +51,7 @@ class GetRouteOverviewTests(TestCase):
         self.use_case.get_route_overview(request)
 
     def test_has_measurements_in_response_if_router_request_was_observed(self) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 1))
         self.record_measurement()
         request = self.create_request()
         response = self.use_case.get_route_overview(request)
@@ -59,6 +60,7 @@ class GetRouteOverviewTests(TestCase):
     def test_that_timeseries_contains_an_entry_for_method_that_was_observed(
         self,
     ) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 1))
         self.record_measurement(method="POST")
         request = self.create_request()
         response = self.use_case.get_route_overview(request)
@@ -89,14 +91,14 @@ class GetRouteOverviewTests(TestCase):
     def test_that_a_measurement_on_the_following_day_at_midnight_is_ignored_for_the_day_in_question(
         self,
     ) -> None:
-        self.clock.freeze_time(datetime(2000, 1, 1))
+        self.clock.freeze_time(datetime(2000, 1, 1, tzinfo=timezone.utc))
         self.record_measurement(method="GET", duration=timedelta(seconds=3))
-        self.clock.freeze_time(datetime(2000, 1, 2))
+        self.clock.freeze_time(datetime(2000, 1, 2, tzinfo=timezone.utc))
         self.record_measurement(method="GET", duration=timedelta(seconds=1))
         request = self.create_request(
             interval=use_case.Interval.daily,
-            start_time=datetime(2000, 1, 1),
-            end_time=datetime(2000, 1, 2),
+            start_time=datetime(2000, 1, 1, tzinfo=timezone.utc),
+            end_time=datetime(2000, 1, 2, tzinfo=timezone.utc),
         )
         response = self.use_case.get_route_overview(request)
         assert response.timeseries["GET"][0].value == 3.0

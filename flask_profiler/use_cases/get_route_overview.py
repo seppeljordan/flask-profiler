@@ -1,4 +1,5 @@
 import enum
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Dict, List, Optional
@@ -40,28 +41,30 @@ class GetRouteOverviewUseCase:
     calendar: Calendar
 
     def get_route_overview(self, request: Request) -> Response:
-        timeseries: Dict[str, List[IntervalMeasurement]] = dict()
-        measurements = self.archivist.get_records().with_name(request.route_name)
-        for summary in measurements.summarize():
-            method = summary.method
-            if request.start_time and request.end_time:
-                interval = self.calendar.day_interval(
-                    since=request.start_time.date(), until=request.end_time.date()
+        timeseries: Dict[str, List[IntervalMeasurement]] = defaultdict(list)
+        measurements = (
+            self.archivist.get_records()
+            .with_name(request.route_name)
+            .requested_before(request.end_time)
+            .requested_after(request.start_time)
+        )
+        interval = self.calendar.day_interval(
+            since=request.start_time.date(),
+            until=request.end_time.date() + timedelta(days=1),
+        )
+        for summary in measurements.summarize_by_interval(
+            list(
+                map(
+                    lambda d: datetime.combine(d, time(), tzinfo=timezone.utc), interval
                 )
-                timeseries[method] = [
-                    measurement
-                    for date in interval
-                    if (
-                        measurement := self._get_daily_measurement(
-                            measurements, date, method
-                        )
-                    ).value
-                    is not None
-                ]
-            else:
-                timeseries[method] = [
-                    IntervalMeasurement(value=0, timestamp=datetime.min)
-                ]
+            )
+        ):
+            timeseries[summary.method].append(
+                IntervalMeasurement(
+                    value=summary.avg_elapsed,
+                    timestamp=summary.first_measurement,
+                )
+            )
         return Response(request=request, timeseries=timeseries)
 
     def _get_daily_measurement(

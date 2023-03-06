@@ -257,3 +257,10 @@ class SummarizeByIntervalTests(SqliteTests):
             )
         )
         assert summary_1.count == 2
+
+    def test_can_get_values_for_interval_of_length_100(self) -> None:
+        start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        results = self.db.get_records().summarize_by_interval(
+            [start_date + timedelta(days=n) for n in range(100)]
+        )
+        assert not results

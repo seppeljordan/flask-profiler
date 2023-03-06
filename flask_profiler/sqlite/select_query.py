@@ -121,29 +121,20 @@ class RecordResult(SelectQuery[interface.Record]):
     ) -> SelectQuery[interface.Summary]:
         first_timestamp = timestamps[0]
         last_timestamp = timestamps[-1]
-        interval_op: q.Expression = q.If(
-            q.BinaryOp(
-                "<",
-                q.Identifier("start_timestamp"),
-                q.Literal(timestamps[0].timestamp()),
-            ),
-            q.Literal(0),
-            q.Literal(1),
-        )
-        for timestamp in timestamps[1:]:
-            interval_op = q.BinaryOp(
-                "+",
-                q.If(
+        interval_op = q.Case(
+            cases=[
+                (
                     q.BinaryOp(
-                        "<",
+                        ">=",
                         q.Identifier("start_timestamp"),
-                        q.Literal(timestamp.timestamp()),
+                        q.Literal(subinterval_start.timestamp()),
                     ),
-                    q.Literal(0),
-                    q.Literal(1),
-                ),
-                interval_op,
-            )
+                    q.Literal(n + 1),
+                )
+                for n, subinterval_start in reversed(list(enumerate(timestamps)))
+            ],
+            alternative=q.Literal(0),
+        )
         return replace(
             cast(SelectQuery[interface.Summary], self),
             query=q.Select(

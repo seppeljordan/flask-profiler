@@ -14,11 +14,17 @@ from .select_query import RecordResult
 LOGGER = logging.getLogger(__name__)
 
 
+class Row(sqlite3.Row):
+    def __str__(self) -> str:
+        values = [f"{key}: {self[key]}" for key in self.keys()]
+        return f'<Row {", ".join(values)}>'
+
+
 class Sqlite:
     def __init__(self, sqlite_file: str) -> None:
         self.sqlite_file = sqlite_file
         self.connection = sqlite3.connect(self.sqlite_file, check_same_thread=False)
-        self.connection.row_factory = sqlite3.Row
+        self.connection.row_factory = Row
         self.cursor = self.connection.cursor()
 
     def create_database(self) -> None:
