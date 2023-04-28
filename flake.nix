@@ -63,6 +63,7 @@
             '';
             python39-package = pkgs.python39.pkgs.flask-profiler;
             python310-package = pkgs.python310.pkgs.flask-profiler;
+            python311-package = pkgs.python311.pkgs.flask-profiler;
           };
         });
       supportedSystems = flake-utils.lib.defaultSystems;
