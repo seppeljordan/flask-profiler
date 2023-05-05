@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 
 from flask_profiler.entities import measurement_archive as archive
 
@@ -59,6 +59,14 @@ class RecordedMeasurementsPlaceholder:
     def with_id(self, id_: int) -> RecordedMeasurementsPlaceholder:
         return self
 
+    def first(self) -> Optional[archive.Record]:
+        return None
+
+    def ordered_by_start_time(
+        self, ascending: bool = True
+    ) -> RecordedMeasurementsPlaceholder:
+        return self
+
 
 class SummarizedMeasurementsPlaceholder:
     def __iter__(self) -> Iterator[archive.Summary]:
@@ -72,3 +80,6 @@ class SummarizedMeasurementsPlaceholder:
 
     def __len__(self) -> int:
         return 0
+
+    def first(self) -> Optional[archive.Summary]:
+        return None

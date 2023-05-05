@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Generic, Iterator, List, Protocol, TypeVar
+from typing import Generic, Iterator, List, Optional, Protocol, TypeVar
 
 FiledDataT = TypeVar("FiledDataT", bound="FiledData")
 T = TypeVar("T", covariant=True)
@@ -32,6 +32,9 @@ class FiledData(Protocol, Generic[T]):
         ...
 
     def offset(self: FiledDataT, n: int) -> FiledDataT:
+        ...
+
+    def first(self) -> Optional[T]:
         ...
 
     def __len__(self) -> int:
@@ -80,6 +83,9 @@ class RecordedMeasurements(FiledData[Record], Protocol):
         ...
 
     def with_id(self, id_: int) -> RecordedMeasurements:
+        ...
+
+    def ordered_by_start_time(self, ascending: bool = ...) -> RecordedMeasurements:
         ...
 
 

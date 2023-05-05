@@ -56,6 +56,11 @@ class JoinConstraint(Protocol):
         ...
 
 
+class Ordering(Expression, Protocol):
+    def is_ascending(self) -> bool:
+        ...
+
+
 # Statements
 
 
@@ -65,6 +70,7 @@ class Select:
     from_clause: FromClause
     where_clause: Optional[Expression] = None
     group_by: Optional[Expression] = None
+    order_by: List[Ordering] = field(default_factory=list)
     limit_clause: int = -1
     offset_clause: int = -1
 
@@ -75,6 +81,11 @@ class Select:
             query += " WHERE " + self.where_clause.as_expression()
         if self.group_by is not None:
             query += " GROUP BY " + self.group_by.as_expression()
+        if self.order_by:
+            query += " ORDER BY " + ", ".join(
+                clause.as_expression() + (" DESC" if not clause.is_ascending() else "")
+                for clause in self.order_by
+            )
         query += self._limit_clause()
         return query
 
@@ -508,3 +519,25 @@ class Case:
             else ""
         )
         return "CASE " + " ".join(conditions) + " " + alternative + " END"
+
+
+@dataclass
+class Asc:
+    expression: Expression
+
+    def as_expression(self) -> str:
+        return self.expression.as_expression()
+
+    def is_ascending(self) -> bool:
+        return True
+
+
+@dataclass
+class Desc:
+    expression: Expression
+
+    def as_expression(self) -> str:
+        return self.expression.as_expression()
+
+    def is_ascending(self) -> bool:
+        return False

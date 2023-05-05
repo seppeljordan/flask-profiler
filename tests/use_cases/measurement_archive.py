@@ -4,7 +4,7 @@ import itertools
 from collections import defaultdict
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Callable, Dict, Generic, Iterator, List, TypeVar
+from typing import Callable, Dict, Generic, Iterator, List, Optional, TypeVar
 
 from flask_profiler.entities.measurement_archive import Measurement, Record, Summary
 
@@ -48,6 +48,13 @@ class IteratorBasedData(Generic[T]):
             self,
             items=lambda: itertools.islice(self.items(), n),
         )
+
+    def first(self) -> Optional[T]:
+        items = iter(self.items())
+        try:
+            return next(items)
+        except StopIteration:
+            return None
 
     def __len__(self) -> int:
         i = 0
@@ -101,6 +108,16 @@ class RecordedMeasurements(IteratorBasedData[Record]):
 
     def with_id(self, id_: int) -> RecordedMeasurements:
         return replace(self, items=lambda: filter(lambda i: i.id == id_, self.items()))
+
+    def ordered_by_start_time(self, ascending: bool = True) -> RecordedMeasurements:
+        return replace(
+            self,
+            items=lambda: sorted(
+                list(self.items()),
+                key=lambda measurement: measurement.start_timestamp,
+                reverse=not ascending,
+            ),
+        )
 
 
 class SummarizedMeasurements(IteratorBasedData[Summary]):

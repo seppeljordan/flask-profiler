@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from sqlite3 import Cursor
-from typing import Any, Callable, Generic, Iterator, List, TypeVar, cast
+from typing import Any, Callable, Generic, Iterator, List, Optional, TypeVar, cast
 from urllib.parse import quote
 
 from flask_profiler import query as q
@@ -68,6 +68,14 @@ class SelectQuery(Generic[T]):
                 offset_clause=new_offset,
             ),
         )
+
+    def first(self) -> Optional[T]:
+        LOGGER.debug("Running query %s", self.query)
+        results = self.db.execute(str(self.query))
+        if (row := results.fetchone()) is not None:
+            return self.mapping(row)
+        else:
+            return None
 
 
 class RecordResult(SelectQuery[interface.Record]):
@@ -253,5 +261,14 @@ class RecordResult(SelectQuery[interface.Record]):
         return self._with_modified_query(
             lambda query: query.and_where(
                 q.BinaryOp("=", q.Identifier("ID"), q.Literal(id_))
+            )
+        )
+
+    def ordered_by_start_time(self, ascending: bool = True) -> RecordResult:
+        Order = q.Asc if ascending else q.Desc
+        return self._with_modified_query(
+            lambda query: replace(
+                query,
+                order_by=[Order(q.Identifier("start_timestamp"))] + query.order_by,
             )
         )

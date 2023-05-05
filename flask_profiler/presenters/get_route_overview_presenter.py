@@ -88,20 +88,24 @@ class GetRouteOverviewPresenter:
         width: float,
         height: float,
         left_border: float,
-        start_time: datetime,
+        start_time: Optional[datetime],
         end_time: datetime,
         measurements: List[use_case.IntervalMeasurement],
         title: str,
     ) -> Graph:
-        interval_length_in_days = (end_time.date() - start_time.date()).days
-        points = [
-            Point(
-                _x=(measurement.timestamp.date() - start_time.date()).days,
-                _y=measurement.value,
-            )
-            for measurement in measurements
-            if measurement.value is not None
-        ]
+        start_time = start_time or self._get_earliest_measurement(measurements)
+        if start_time is None:
+            points = []
+        else:
+            interval_length_in_days = (end_time.date() - start_time.date()).days
+            points = [
+                Point(
+                    _x=(measurement.timestamp.date() - start_time.date()).days,
+                    _y=measurement.value,
+                )
+                for measurement in measurements
+                if measurement.value is not None
+            ]
         max_value, markings_count = self._get_max_scale_value(max(p._y for p in points))
         normalize_values = Conversion.stretch(y=1 / max_value)
         normalize_points = Conversion.stretch(x=1 / interval_length_in_days).concat(
@@ -143,6 +147,18 @@ class GetRouteOverviewPresenter:
             points=[transformation.transform_point(p) for p in normalized_points],
             lines=[transformation.transform_line(line) for line in normalized_lines],
         )
+
+    def _get_earliest_measurement(
+        self, measurements: List[use_case.IntervalMeasurement]
+    ) -> Optional[datetime]:
+        try:
+            first_measurement, rest_of_measurements = measurements[0], measurements[1:]
+        except IndexError:
+            return None
+        earliest_timestamp = first_measurement.timestamp
+        for measurement in rest_of_measurements:
+            earliest_timestamp = min(earliest_timestamp, measurement.timestamp)
+        return earliest_timestamp
 
     def _generate_markings(
         self, scale_max_value: float, markings_count: int

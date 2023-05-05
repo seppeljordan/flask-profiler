@@ -171,6 +171,60 @@ class GetRecordsTests(SqliteTests):
         route_summary = list(summary)[0]
         assert route_summary.last_measurement == expected_datetime
 
+    def test_that_first_measurement_is_none_if_no_measurements_are_present(
+        self,
+    ) -> None:
+        assert self.db.get_records().first() is None
+
+    def test_that_first_measurement_is_something_if_measurement_is_present(
+        self,
+    ) -> None:
+        self.db.record_measurement(self.create_measurement())
+        assert self.db.get_records().first() is not None
+
+    def test_that_first_measurement_is_equal_to_first_measurement_from_list_of_all_measurements(
+        self,
+    ) -> None:
+        for _ in range(100):
+            self.db.record_measurement(self.create_measurement())
+        assert self.db.get_records().first() == list(self.db.get_records())[0]
+
+    def test_that_measurements_can_be_ordered_by_start_time(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2001, 1, 1, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 1, 1, tzinfo=timezone.utc)
+            )
+        )
+        measurement = self.db.get_records().ordered_by_start_time().first()
+        assert measurement
+        assert measurement.start_timestamp.year == 2000
+
+    def test_that_measurements_can_be_ordered_by_start_time_in_descending_order(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2001, 1, 1, tzinfo=timezone.utc)
+            )
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                start_timestamp=datetime(2000, 1, 1, tzinfo=timezone.utc)
+            )
+        )
+        measurement = (
+            self.db.get_records().ordered_by_start_time(ascending=False).first()
+        )
+        assert measurement
+        assert measurement.start_timestamp.year == 2001
+
 
 class SummarizeByIntervalTests(SqliteTests):
     def test_with_empty_db_no_summaries_are_returned(self) -> None:

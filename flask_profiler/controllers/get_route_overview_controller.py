@@ -17,10 +17,9 @@ class GetRouteOverviewController:
         route_name = self.http_request.path_arguments()["route_name"]
         assert isinstance(route_name, str)
         end_timestamp = self.clock.utc_now() + timedelta(days=1)
-        start_timestamp = end_timestamp - timedelta(days=30)
         return uc.Request(
             route_name=route_name,
             interval=uc.Interval.daily,
-            start_time=start_timestamp,
+            start_time=None,
             end_time=end_timestamp,
         )

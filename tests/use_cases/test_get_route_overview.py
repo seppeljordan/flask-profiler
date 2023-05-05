@@ -10,13 +10,10 @@ from .base_test_case import TestCase
 class GetRouteOverviewTests(TestCase):
     """These tests are written with a few assumptions in mind:
 
-    - When no start_date is given, then start_date is assumed to be
-      1.1.1999
     - When no end_date is given, then the end_date is assumed to
       1.1.2010
     """
 
-    DEFAULT_START_DATE = datetime(1999, 1, 1, tzinfo=timezone.utc)
     DEFAULT_END_DATE = datetime(2010, 1, 1, tzinfo=timezone.utc)
 
     def setUp(self) -> None:
@@ -118,6 +115,20 @@ class GetRouteOverviewTests(TestCase):
         assert response.timeseries["GET"][0].value == 3.0
         assert response.timeseries["POST"][0].value == 1.0
 
+    def test_that_measurements_from_700_days_before_end_date_are_considered_if_start_date_is_not_explicitly_specified(
+        self,
+    ) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 1, tzinfo=timezone.utc))
+        self.record_measurement(method="GET", duration=timedelta(seconds=3))
+        self.clock.advance_clock(timedelta(days=700))
+        request = self.create_request(
+            interval=use_case.Interval.daily,
+            start_time=None,
+            end_time=self.clock.utc_now(),
+        )
+        response = self.use_case.get_route_overview(request)
+        assert response.timeseries["GET"][0].value == 3.0
+
     def create_request(
         self,
         name: str = "test route",
@@ -125,9 +136,7 @@ class GetRouteOverviewTests(TestCase):
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
     ) -> use_case.Request:
-        if start_time is None:
-            start_time = self.DEFAULT_START_DATE
-        if start_time.tzinfo is None:
+        if start_time is not None and start_time.tzinfo is None:
             start_time = start_time.astimezone(timezone.utc)
         if end_time is None:
             end_time = self.DEFAULT_END_DATE

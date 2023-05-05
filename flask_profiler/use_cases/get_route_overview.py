@@ -7,7 +7,10 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Dict, List, Optional
 
 from flask_profiler.calendar import Calendar
-from flask_profiler.entities.measurement_archive import MeasurementArchivist
+from flask_profiler.entities.measurement_archive import (
+    MeasurementArchivist,
+    RecordedMeasurements,
+)
 
 
 @dataclass
@@ -20,11 +23,18 @@ class GetRouteOverviewUseCase:
         measurements = (
             self.archivist.get_records()
             .with_name(request.route_name)
-            .requested_after(request.start_time)
             .requested_before(request.end_time)
         )
+        if request.start_time:
+            measurements = measurements.requested_after(request.start_time)
+            interval_start = request.start_time.date()
+        else:
+            if timestamp := self._get_earliest_measurement(measurements):
+                interval_start = timestamp.date()
+            else:
+                return Response(request=request, timeseries=dict())
         interval = self.calendar.day_interval(
-            since=request.start_time.date(),
+            since=interval_start,
             until=request.end_time.date() + timedelta(days=1),
         )
         for summary in measurements.summarize_by_interval(
@@ -38,12 +48,21 @@ class GetRouteOverviewUseCase:
             )
         return Response(request=request, timeseries=timeseries)
 
+    def _get_earliest_measurement(
+        self, measurements: RecordedMeasurements
+    ) -> Optional[datetime]:
+        measurement = measurements.ordered_by_start_time().first()
+        if measurement:
+            return measurement.start_timestamp
+        else:
+            return None
+
 
 @dataclass
 class Request:
     route_name: str
     interval: Interval
-    start_time: datetime
+    start_time: Optional[datetime]
     end_time: datetime
 
 
