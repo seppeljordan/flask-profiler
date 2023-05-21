@@ -16,15 +16,6 @@ from .formatting import format_duration_in_ms
 from .pagination import Paginator
 from .urls import get_url_with_query
 
-HEADERS = [
-    table.Header(label="Method"),
-    table.Header(label="Name"),
-    table.Header(label="#Requests"),
-    table.Header(label="Avg. response time"),
-    table.Header(label="Min. response time"),
-    table.Header(label="Max. response time"),
-]
-
 
 @dataclass
 class ViewModel:
@@ -47,7 +38,7 @@ class GetSummaryPresenter:
     ) -> ViewModel:
         view_model = ViewModel(
             table=table.Table(
-                headers=HEADERS,
+                headers=self.get_headers(),
                 rows=[
                     self._render_row(measurement)
                     for measurement in response.measurements
@@ -69,6 +60,19 @@ class GetSummaryPresenter:
             ),
         )
         return view_model
+
+    def get_headers(self) -> List[table.Header]:
+        return [
+            table.Header(label="Method"),
+            table.Header(label="Name"),
+            table.Header(label="#Requests"),
+            table.Header(
+                label="Avg. response time",
+                link_target=self._get_average_time_column_header_link(),
+            ),
+            table.Header(label="Min. response time"),
+            table.Header(label="Max. response time"),
+        ]
 
     def get_pagination_target_link(self) -> ParseResult:
         return get_url_with_query(".summary", self.http_request.get_arguments())
@@ -92,3 +96,26 @@ class GetSummaryPresenter:
 
     def _render_optional_timestamp(self, timestamp: Optional[datetime]) -> str:
         return "" if timestamp is None else timestamp.isoformat()
+
+    def is_currently_sorted_by(self, field: use_case.SortingField) -> bool:
+        mapping = {"average_time": use_case.SortingField.average_time}
+        arguments = self.http_request.get_arguments()
+        if sorted_by := arguments.get("sorted_by"):
+            if sorted_by.startswith("+") or sorted_by.startswith("-"):
+                sorted_by = sorted_by[1:]
+            return mapping.get(sorted_by) == field
+        return False
+
+    def _get_average_time_column_header_link(self) -> str:
+        sorted_by = "average_time"
+        if self.is_currently_sorted_by(use_case.SortingField.average_time):
+            sorted_by = self.alternate_sorting_order() + sorted_by
+        return get_url_with_query(
+            ".summary", dict(self.http_request.get_arguments(), sorted_by=sorted_by)
+        ).geturl()
+
+    def alternate_sorting_order(self) -> str:
+        if sorted_by := self.http_request.get_arguments().get("sorted_by"):
+            if sorted_by.startswith("-"):
+                return "+"
+        return "-"

@@ -8,11 +8,21 @@
 </td>
 {% endmacro %}
 
+{% macro render_header(header) %}
+<th>
+    {% if header.link_target %}
+    <a href="{{ header.link_target }}">{{ header.label }}</a>
+    {% else %}
+    {{ header.label }}
+    {% endif %}
+</th>
+{% endmacro %}
+
 {% macro render_table(table) %}
 <table>
     <thead>
 	{% for header in table.headers %}
-	<th>{{ header.label }}</th>
+	{{ render_header(header) }}
 	{% endfor %}
     </thead>
     <tbody>

@@ -56,6 +56,7 @@ class FilterFormData:
     method: Optional[str]
     requested_after: Optional[datetime]
     requested_before: Optional[datetime]
+    sorted_by: Optional[str]
 
     @classmethod
     def parse_from_from(self, args: Dict[str, str]) -> FilterFormData:
@@ -66,13 +67,16 @@ class FilterFormData:
             normalize=lambda x: x.upper(),
         )
         name_field = OptionalStringField(name="name")
+        sorted_by_field = OptionalStringField(name="sorted_by")
         requested_after_field.parse_value(form=args)
         requested_before_field.parse_value(form=args)
         method_field.parse_value(form=args)
         name_field.parse_value(form=args)
+        sorted_by_field.parse_value(form=args)
         return FilterFormData(
             method=method_field.get_value(),
             requested_after=requested_after_field.get_value(),
             requested_before=requested_before_field.get_value(),
             name=name_field.get_value(),
+            sorted_by=sorted_by_field.get_value(),
         )

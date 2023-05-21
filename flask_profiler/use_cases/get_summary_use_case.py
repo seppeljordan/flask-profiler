@@ -1,10 +1,21 @@
 from __future__ import annotations
 
+import enum
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 
 from flask_profiler.entities import measurement_archive
+
+
+class SortingField(enum.Enum):
+    average_time = enum.auto()
+    none = enum.auto()
+
+
+class SortingOrder(enum.Enum):
+    ascending = enum.auto()
+    descending = enum.auto()
 
 
 @dataclass
@@ -21,6 +32,8 @@ class Measurement:
 class Request:
     limit: int
     offset: int
+    sorting_order: SortingOrder
+    sorting_field: SortingField
     method: Optional[str] = None
     name_filter: Optional[str] = None
     requested_after: Optional[datetime] = None
@@ -49,6 +62,9 @@ class GetSummaryUseCase:
         if request.requested_before is not None:
             records = records.requested_before(request.requested_before)
         results = records.summarize()
+        results = results.sorted_by_avg_elapsed(
+            ascending=request.sorting_order == SortingOrder.ascending
+        )
         total_results = len(results)
         results = results.limit(request.limit).offset(request.offset)
         return Response(

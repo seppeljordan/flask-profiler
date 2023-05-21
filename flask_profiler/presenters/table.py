@@ -13,6 +13,7 @@ class Table:
 @dataclass
 class Header:
     label: str
+    link_target: Optional[str] = None
 
 
 @dataclass
