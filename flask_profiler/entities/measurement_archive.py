@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Generic, Iterator, List, Optional, Protocol, TypeVar
 
+from typing_extensions import Self
+
 FiledDataT = TypeVar("FiledDataT", bound="FiledData")
 T = TypeVar("T", covariant=True)
 
@@ -102,4 +104,5 @@ class Summary:
 
 
 class SummarizedMeasurements(FiledData[Summary], Protocol):
-    ...
+    def sorted_by_avg_elapsed(self, ascending: bool = ...) -> Self:
+        ...

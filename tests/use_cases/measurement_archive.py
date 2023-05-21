@@ -6,6 +6,8 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable, Dict, Generic, Iterator, List, Optional, TypeVar
 
+from typing_extensions import Self
+
 from flask_profiler.entities.measurement_archive import Measurement, Record, Summary
 
 T = TypeVar("T")
@@ -121,7 +123,15 @@ class RecordedMeasurements(IteratorBasedData[Record]):
 
 
 class SummarizedMeasurements(IteratorBasedData[Summary]):
-    pass
+    def sorted_by_avg_elapsed(self, ascending: bool = True) -> Self:
+        return replace(
+            self,
+            items=lambda: sorted(
+                list(self.items()),
+                reverse=not ascending,
+                key=lambda summary: summary.avg_elapsed,
+            ),
+        )
 
 
 class SummaryBuilder:

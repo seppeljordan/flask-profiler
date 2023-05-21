@@ -19,10 +19,11 @@ class SqliteTests(TestCase):
         route_name: str = "test_route_name",
         method: str = "GET",
         start_timestamp: Optional[datetime] = None,
+        duration: timedelta = timedelta(days=1),
     ) -> archive.Measurement:
         if start_timestamp is None:
             start_timestamp = datetime(2000, 1, 1)
-        end_timestamp = start_timestamp + timedelta(days=1)
+        end_timestamp = start_timestamp + duration
         return archive.Measurement(
             route_name=route_name,
             start_timestamp=start_timestamp,
@@ -49,6 +50,17 @@ class RecordMeasurementTests(SqliteTests):
         )
         measurement = list(self.db.get_records().with_id(id_))[0]
         assert measurement.name == expected_route_name
+
+    @given(expected_route_name=strategies.text())
+    @example(expected_route_name="\x00")
+    def test_that_summaries_route_name_is_retrieved_exactly_as_it_was_inserted(
+        self, expected_route_name: str
+    ) -> None:
+        id_ = self.db.record_measurement(
+            self.create_measurement(route_name=expected_route_name)
+        )
+        summary = list(self.db.get_records().with_id(id_).summarize())[0]
+        assert summary.name == expected_route_name
 
     @given(method=strategies.text())
     @example(method="\x00")
@@ -170,6 +182,46 @@ class GetRecordsTests(SqliteTests):
         summary = self.db.get_records().summarize()
         route_summary = list(summary)[0]
         assert route_summary.last_measurement == expected_datetime
+
+    def test_that_summary_can_be_ordered_by_avg_elapsed_in_ascending_order(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                route_name="longer measurement", duration=timedelta(days=1)
+            ),
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                route_name="shorter measurement", duration=timedelta(seconds=1)
+            ),
+        )
+        summaries = self.db.get_records().summarize()
+        assert [summary.name for summary in summaries.sorted_by_avg_elapsed()] == [
+            "shorter measurement",
+            "longer measurement",
+        ]
+
+    def test_that_summary_can_be_ordered_by_avg_elapsed_in_descending_order(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(
+                route_name="longer measurement", duration=timedelta(days=1)
+            ),
+        )
+        self.db.record_measurement(
+            self.create_measurement(
+                route_name="shorter measurement", duration=timedelta(seconds=1)
+            ),
+        )
+        summaries = self.db.get_records().summarize()
+        assert [
+            summary.name for summary in summaries.sorted_by_avg_elapsed(ascending=False)
+        ] == [
+            "longer measurement",
+            "shorter measurement",
+        ]
 
     def test_that_first_measurement_is_none_if_no_measurements_are_present(
         self,

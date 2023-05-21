@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Iterator, List, Optional
 
+from typing_extensions import Self
+
 from flask_profiler.entities import measurement_archive as archive
 
 
@@ -83,3 +85,6 @@ class SummarizedMeasurementsPlaceholder:
 
     def first(self) -> Optional[archive.Summary]:
         return None
+
+    def sorted_by_avg_elapsed(self, ascending: bool = True) -> Self:
+        return self
