@@ -74,6 +74,36 @@ class UseCaseTests(TestCase):
             "longer handler",
         ]
 
+    def test_can_sort_by_route_name_in_descending_order(self) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 1))
+        self.record_request(route_name="a handler")
+        self.record_request(route_name="b handler")
+        response = self.use_case.get_summary(
+            self.get_uc_request(
+                sorting_field=use_case.SortingField.route_name,
+                sorting_order=use_case.SortingOrder.descending,
+            )
+        )
+        assert [measurement.name for measurement in response.measurements] == [
+            "b handler",
+            "a handler",
+        ]
+
+    def test_can_sort_by_route_name_in_ascending_order(self) -> None:
+        self.clock.freeze_time(datetime(2000, 1, 1))
+        self.record_request(route_name="a handler")
+        self.record_request(route_name="b handler")
+        response = self.use_case.get_summary(
+            self.get_uc_request(
+                sorting_field=use_case.SortingField.route_name,
+                sorting_order=use_case.SortingOrder.ascending,
+            )
+        )
+        assert [measurement.name for measurement in response.measurements] == [
+            "a handler",
+            "b handler",
+        ]
+
     def record_request(
         self,
         route_name: Optional[str] = None,

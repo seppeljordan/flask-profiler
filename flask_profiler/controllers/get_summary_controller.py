@@ -57,4 +57,6 @@ class GetSummaryController:
             field_name = self.form_data.sorted_by
         if field_name == "average_time":
             field = uc.SortingField.average_time
+        if field_name == "route_name":
+            field = uc.SortingField.route_name
         return field, order

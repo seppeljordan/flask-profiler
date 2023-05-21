@@ -106,3 +106,6 @@ class Summary:
 class SummarizedMeasurements(FiledData[Summary], Protocol):
     def sorted_by_avg_elapsed(self, ascending: bool = ...) -> Self:
         ...
+
+    def sorted_by_route_name(self, ascending: bool = ...) -> Self:
+        ...

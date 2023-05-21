@@ -10,6 +10,7 @@ from flask_profiler.entities import measurement_archive
 
 class SortingField(enum.Enum):
     average_time = enum.auto()
+    route_name = enum.auto()
     none = enum.auto()
 
 
@@ -62,9 +63,14 @@ class GetSummaryUseCase:
         if request.requested_before is not None:
             records = records.requested_before(request.requested_before)
         results = records.summarize()
-        results = results.sorted_by_avg_elapsed(
-            ascending=request.sorting_order == SortingOrder.ascending
-        )
+        if request.sorting_field == SortingField.average_time:
+            results = results.sorted_by_avg_elapsed(
+                ascending=request.sorting_order == SortingOrder.ascending
+            )
+        elif request.sorting_field == SortingField.route_name:
+            results = results.sorted_by_route_name(
+                ascending=request.sorting_order == SortingOrder.ascending
+            )
         total_results = len(results)
         results = results.limit(request.limit).offset(request.offset)
         return Response(

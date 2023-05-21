@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import ParseResult
 
 from flask import url_for
@@ -25,6 +25,7 @@ class ViewModel:
     name_filter_text: str
     requested_after_filter_text: str
     requested_before_filter_text: str
+    submit_form_sorted_by: str
 
 
 @dataclass
@@ -58,17 +59,23 @@ class GetSummaryPresenter:
             requested_before_filter_text=self._render_optional_timestamp(
                 response.request.requested_before
             ),
+            submit_form_sorted_by=self.http_request.get_arguments().get(
+                "sorted_by", ""
+            ),
         )
         return view_model
 
     def get_headers(self) -> List[table.Header]:
         return [
             table.Header(label="Method"),
-            table.Header(label="Name"),
+            table.Header(
+                label="Name",
+                link_target=self._get_sort_column_header_link("route_name"),
+            ),
             table.Header(label="#Requests"),
             table.Header(
                 label="Avg. response time",
-                link_target=self._get_average_time_column_header_link(),
+                link_target=self._get_sort_column_header_link("average_time"),
             ),
             table.Header(label="Min. response time"),
             table.Header(label="Max. response time"),
@@ -98,17 +105,15 @@ class GetSummaryPresenter:
         return "" if timestamp is None else timestamp.isoformat()
 
     def is_currently_sorted_by(self, field: use_case.SortingField) -> bool:
-        mapping = {"average_time": use_case.SortingField.average_time}
         arguments = self.http_request.get_arguments()
         if sorted_by := arguments.get("sorted_by"):
             if sorted_by.startswith("+") or sorted_by.startswith("-"):
                 sorted_by = sorted_by[1:]
-            return mapping.get(sorted_by) == field
+            return _SORTED_BY_MAPPING.get(sorted_by) == field
         return False
 
-    def _get_average_time_column_header_link(self) -> str:
-        sorted_by = "average_time"
-        if self.is_currently_sorted_by(use_case.SortingField.average_time):
+    def _get_sort_column_header_link(self, sorted_by: str) -> str:
+        if self.is_currently_sorted_by(_SORTED_BY_MAPPING[sorted_by]):
             sorted_by = self.alternate_sorting_order() + sorted_by
         return get_url_with_query(
             ".summary", dict(self.http_request.get_arguments(), sorted_by=sorted_by)
@@ -119,3 +124,9 @@ class GetSummaryPresenter:
             if sorted_by.startswith("-"):
                 return "+"
         return "-"
+
+
+_SORTED_BY_MAPPING: Dict[str, use_case.SortingField] = {
+    "average_time": use_case.SortingField.average_time,
+    "route_name": use_case.SortingField.route_name,
+}

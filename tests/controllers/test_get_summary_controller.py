@@ -22,11 +22,14 @@ class GetSummaryControllerTests(TestCase):
         request = controller.process_request()
         assert request.sorting_order == uc.SortingOrder.ascending
 
-    def test_that_with_sorted_by_field_is_parsed_properly(self) -> None:
+    def test_that_sorted_by_field_is_parsed_properly(self) -> None:
         examples = [
             ("-average_time", uc.SortingField.average_time, uc.SortingOrder.descending),
             ("+average_time", uc.SortingField.average_time, uc.SortingOrder.ascending),
             ("average_time", uc.SortingField.average_time, uc.SortingOrder.ascending),
+            ("-route_name", uc.SortingField.route_name, uc.SortingOrder.descending),
+            ("+route_name", uc.SortingField.route_name, uc.SortingOrder.ascending),
+            ("route_name", uc.SortingField.route_name, uc.SortingOrder.ascending),
         ]
         for sorted_by_string, expected_field, expected_order in examples:
             controller = GetSummaryController(

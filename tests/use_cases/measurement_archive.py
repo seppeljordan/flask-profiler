@@ -133,6 +133,16 @@ class SummarizedMeasurements(IteratorBasedData[Summary]):
             ),
         )
 
+    def sorted_by_route_name(self, ascending: bool = True) -> Self:
+        return replace(
+            self,
+            items=lambda: sorted(
+                list(self.items()),
+                reverse=not ascending,
+                key=lambda summary: summary.name,
+            ),
+        )
+
 
 class SummaryBuilder:
     @dataclass(frozen=True)

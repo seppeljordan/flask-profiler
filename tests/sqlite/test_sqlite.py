@@ -223,6 +223,38 @@ class GetRecordsTests(SqliteTests):
             "shorter measurement",
         ]
 
+    def test_that_summary_can_be_ordered_by_name_in_ascending_order(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(route_name="a measurement"),
+        )
+        self.db.record_measurement(
+            self.create_measurement(route_name="b measurement"),
+        )
+        summaries = self.db.get_records().summarize()
+        assert [summary.name for summary in summaries.sorted_by_route_name()] == [
+            "a measurement",
+            "b measurement",
+        ]
+
+    def test_that_summary_can_be_ordered_by_name_in_descending_order(
+        self,
+    ) -> None:
+        self.db.record_measurement(
+            self.create_measurement(route_name="a measurement"),
+        )
+        self.db.record_measurement(
+            self.create_measurement(route_name="b measurement"),
+        )
+        summaries = self.db.get_records().summarize()
+        assert [
+            summary.name for summary in summaries.sorted_by_route_name(ascending=False)
+        ] == [
+            "b measurement",
+            "a measurement",
+        ]
+
     def test_that_first_measurement_is_none_if_no_measurements_are_present(
         self,
     ) -> None:

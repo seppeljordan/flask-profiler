@@ -88,3 +88,6 @@ class SummarizedMeasurementsPlaceholder:
 
     def sorted_by_avg_elapsed(self, ascending: bool = True) -> Self:
         return self
+
+    def sorted_by_route_name(self, ascending: bool = True) -> Self:
+        return self

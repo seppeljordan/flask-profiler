@@ -291,3 +291,12 @@ class SummarizedMeasurementsImpl(SelectQuery[interface.Summary]):
                 order_by=[Order(q.Identifier("avg"))] + query.order_by,
             )
         )
+
+    def sorted_by_route_name(self, ascending: bool = True) -> Self:
+        Order = q.Asc if ascending else q.Desc
+        return self._with_modified_query(
+            lambda query: replace(
+                query,
+                order_by=[Order(q.Identifier("route_name"))] + query.order_by,
+            )
+        )
