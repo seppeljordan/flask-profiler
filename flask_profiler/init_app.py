@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-import logging
+from logging import getLogger
 from dataclasses import dataclass
 
 from flask import Flask
@@ -9,7 +7,7 @@ from .dependency_injector import DependencyInjector
 from .flask_profiler import flask_profiler
 from .measured_route import MeasuredRouteFactory
 
-logger = logging.getLogger("flask-profiler")
+logger = getLogger("flask-profiler")
 
 
 @dataclass
@@ -17,12 +15,11 @@ class RouteWrapper:
     measured_route_factory: MeasuredRouteFactory
 
     def wrap_all_routes(self, app: Flask) -> None:
-        """
-        wraps all endpoints defined in the given flask app to measure how long time
-        each endpoints takes while being executed. This wrapping process is
-        supposed not to change endpoint behaviour.
-        :param app: Flask application instance
-        :return:
+        """This function wraps all the endpoints defined in the
+        provided Flask app in order to measure the execution time of
+        each endpoint. The purpose of this wrapping process is to
+        monitor the time taken by each endpoint without affecting
+        their original behavior.
         """
         for endpoint, func in app.view_functions.items():
             app.view_functions[
@@ -34,12 +31,12 @@ class RouteWrapper:
 
 
 def init_app(app: Flask) -> None:
-    """Initialize the flask-profiler package with your flask app.
-    Unless flask-profiler is explicityly enabled in the flask config
-    this will do nothing.
+    """This function initializes the flask-profiler package with your
+    Flask app. If flask-profiler is not explicitly enabled in the
+    Flask configuration, this function will have no effect.
 
-    Initialization must be one after all routes you want to monitor
-    are registered with your app.
+    It's important to call this function after registering all the
+    routes that you want to monitor with your app.
     """
     injector = DependencyInjector(app=app)
     config = injector.get_configuration()
