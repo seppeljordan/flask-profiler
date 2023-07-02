@@ -1,5 +1,5 @@
-from logging import getLogger
 from dataclasses import dataclass
+from logging import getLogger
 
 from flask import Flask
 
