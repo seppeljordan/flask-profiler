@@ -50,8 +50,12 @@ def init_app(app: Flask) -> None:
     )
     with app.app_context():
         config.collection.create_database()
-    route_wrapper.wrap_all_routes(app)
-    app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
+    if config.profile_self:
+        app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
+        route_wrapper.wrap_all_routes(app)
+    else:
+        route_wrapper.wrap_all_routes(app)
+        app.register_blueprint(flask_profiler, url_prefix="/" + config.url_prefix)
     if not config.is_basic_auth_enabled:
         logger.warning("flask-profiler is working without basic auth!")
     app.teardown_appcontext(config.cleanup_appcontext)

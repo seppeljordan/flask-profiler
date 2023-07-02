@@ -41,6 +41,10 @@ class Configuration:
         return self.read_config().get("verbose", False)
 
     @property
+    def profile_self(self) -> bool:
+        return self.read_config().get("profile_self", True)
+
+    @property
     def url_prefix(self) -> str:
         return self.read_config().get("endpointRoot", "flask-profiler")
 
