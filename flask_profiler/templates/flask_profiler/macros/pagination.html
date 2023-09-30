@@ -1,9 +1,17 @@
 {% macro render_paginator(paginator) %}
 
-<div>
-    {% for page in paginator %}
-    <a href="{{ page.link_target }}">{{ page.label }}</a>
-    {% endfor %}
-</div>
+<nav class="pagination" role="navigation" aria-label="pagination">
+    <ul class="pagination-list">
+	{% for page in paginator.get_simple_pagination() %}
+	<li>
+	    <a
+		href="{{ page.link_target }}"
+		class="{{ page.css_class }}">
+		{{ page.label }}
+	    </a>
+	</li>
+	{% endfor %}
+    </ul>
+</nav>
 
 {% endmacro %}

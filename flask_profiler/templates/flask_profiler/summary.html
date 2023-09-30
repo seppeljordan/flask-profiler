@@ -7,37 +7,38 @@ Summarized view
 {% endblock %}
 
 {% block content %}
-<div>
-    <h3>Filters</h3>
+<div class="block">
     <form method="get">
-	<div>
-	    <label>Method name:</label>
+	<div class="field">
+	    <label class="label">Method name:</label>
 	    <input name="method" value="{{view_model.method_filter_text}}">
 	</div>
-	<div>
-	    <label>Route name:</label>
+	<div class="field">
+	    <label class="label">Route name:</label>
 	    <input name="name" value="{{view_model.name_filter_text}}">
 	</div>
-	<div>
-	    <label>Requested After:</label>
+	<div class="field">
+	    <label class="label">Requested After:</label>
 	    <input
 		name="requested_after"
 		type="datetime-local"
 		value="{{view_model.requested_after_filter_text}}">
 	</div>
-	<div>
-	    <label>Requested Before:</label>
+	<div class="field">
+	    <label class="label">Requested Before:</label>
 	    <input
 		name="requested_before"
 		type="datetime-local"
 		value="{{view_model.requested_before_filter_text}}">
 	</div>
 	<input type="hidden" name="sorted_by" value="{{ view_model.submit_form_sorted_by }}">
-	<button type="submit">Filter</button>
+	<button type="submit" class="button">Filter</button>
     </form>
 </div>
-<div>
+<div class="block">
     {{ render_paginator(view_model.pagination) }}
+</div>
+<div class="block">
     {{ render_table(view_model.table) }}
 </div>
 {% endblock %}

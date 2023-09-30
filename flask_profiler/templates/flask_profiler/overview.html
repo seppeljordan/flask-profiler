@@ -7,7 +7,7 @@
 {% block content %}
 
 {% for graph in view_model.graphs %}
-<h3>{{ graph.title }}</h3>
+<h3 class="title">{{ graph.title }}</h3>
 <svg viewBox="0 0 {{ graph.width }} {{ graph.height }}"
      height="400">
     {% for line in graph.lines %}

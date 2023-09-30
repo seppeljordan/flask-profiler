@@ -40,6 +40,7 @@ class GetDetailsPresenter:
         response: use_case.Response,
         pagination: PaginationContext,
     ) -> ViewModel:
+        current_page = response.request.offset // response.request.limit + 1
         view_model = ViewModel(
             table=table.Table(
                 headers=HEADERS,
@@ -64,6 +65,7 @@ class GetDetailsPresenter:
                 target_link=get_url_with_query(
                     ".details", self.http_request.get_arguments()
                 ),
+                current_page=current_page,
                 total_page_count=pagination.get_total_pages_count(
                     response.total_result_count
                 ),
