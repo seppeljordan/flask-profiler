@@ -2,13 +2,17 @@
 
 <nav class="pagination" role="navigation" aria-label="pagination">
     <ul class="pagination-list">
-	{% for page in paginator.get_simple_pagination() %}
+	{% for page in paginator.get_truncated_pagination() %}
 	<li>
+	    {% if page.is_page() %}
 	    <a
 		href="{{ page.link_target }}"
 		class="{{ page.css_class }}">
 		{{ page.label }}
 	    </a>
+	    {% else %}
+	    <span class="pagination-ellipsis">&hellip;</span>
+	    {% endif %}
 	</li>
 	{% endfor %}
     </ul>
