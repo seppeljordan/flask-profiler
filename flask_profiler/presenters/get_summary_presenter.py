@@ -37,6 +37,7 @@ class GetSummaryPresenter:
         response: use_case.Response,
         pagination: PaginationContext,
     ) -> ViewModel:
+        current_page = response.request.offset // response.request.limit + 1
         view_model = ViewModel(
             table=table.Table(
                 headers=self.get_headers(),
@@ -46,6 +47,7 @@ class GetSummaryPresenter:
                 ],
             ),
             pagination=Paginator(
+                current_page=current_page,
                 total_page_count=pagination.get_total_pages_count(
                     response.total_results
                 ),

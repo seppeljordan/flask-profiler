@@ -3,16 +3,50 @@
     <head>
 	<meta name="robots" content="noindex, nofollow">
 	<link href="{{ url_for('.static', filename='css/main.css') }}" rel="stylesheet"></link>
+	<link href="{{ url_for('.static', filename='css/bulma.css') }}" rel="stylesheet"></link>
+	<script>
+	    document.addEventListener('DOMContentLoaded', () => {
+	      const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+	      $navbarBurgers.forEach( el => {
+		el.addEventListener('click', () => {
+		  const target = el.dataset.target;
+		  const $target = document.getElementById(target);
+		  el.classList.toggle('is-active');
+		  $target.classList.toggle('is-active');
+		});
+	      });
+	    });	    
+	</script>
     </head>
     <body>
-	<h1>Response time profiling</h1>
-	<ul>
-	    <li><a href="{{ url_for('.summary') }}">Summarized view</a></li>
-	    <li><a href="{{ url_for('.details') }}">Detailed view</a></li>
-	</ul>
-	<div>
-	    <h2>{% block headline %}Profiling{% endblock %}</h2>
-	    {% block content %}{% endblock %}
-	</div>
+	<nav class="navbar" role="navigation" aria-label="main navigation">
+	    <div class="navbar-brand">
+		<a class="navbar-item"><strong>Profiler</strong></a>		
+		<a
+		    role="button"
+		    class="navbar-burger"
+		    aria-label="menu"
+		    aria-expanded="false"
+		    data-target="navigation-bar">
+		    <span aria-hidden="true"></span>
+		    <span aria-hidden="true"></span>
+		    <span aria-hidden="true"></span>
+		</a>		
+	    </div>
+	    <div id="navigation-bar" class="navbar-menu">
+		<div class="navbar-start">
+		    <a class="navbar-item" href="{{ url_for('.summary') }}">Summarized view</a>
+		    <a class="navbar-item" href="{{ url_for('.details') }}">Detailed view</a>
+		</div>
+	    </div>
+	</nav>
+	<section class="section">
+	    <div class="container">
+		<div>
+		    <h2 class="title">{% block headline %}Profiling{% endblock %}</h2>
+		    {% block content %}{% endblock %}
+		</div>
+	    </div>
+	</section>
     </body>
 </html>

@@ -19,7 +19,7 @@
 {% endmacro %}
 
 {% macro render_table(table) %}
-<table>
+<table class="table">
     <thead>
 	{% for header in table.headers %}
 	{{ render_header(header) }}
