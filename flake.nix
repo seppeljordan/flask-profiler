@@ -36,7 +36,7 @@
               mypy
               twine
               virtualenv
-            ];
+            ] ++ [ pkgs.sqlite-interactive ];
             inputsFrom = [ python.pkgs.flask-profiler ];
           };
           checks = {
