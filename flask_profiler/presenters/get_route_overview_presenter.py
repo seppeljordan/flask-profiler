@@ -112,15 +112,10 @@ class GetRouteOverviewPresenter:
             normalize_values
         )
         normalized_points = [normalize_points.transform_point(p) for p in points]
+
         axis = [
-            Line(
-                Point(_x=0, _y=0),
-                Point(_x=0, _y=1),
-            ),
-            Line(
-                Point(_x=0, _y=0),
-                Point(_x=1, _y=0),
-            ),
+            Line(Point(_x=0, _y=0), Point(_x=0, _y=1)),
+            Line(Point(_x=0, _y=0), Point(_x=1, _y=0)),
         ]
         graph_lines = [
             Line(p1, p2, color="blue")
@@ -131,6 +126,7 @@ class GetRouteOverviewPresenter:
             for marking in self._generate_markings(max_value, markings_count)
         ]
         normalized_lines = axis + axis_markings + graph_lines
+
         transformation = (
             Conversion.mirror_y()
             .concat(Conversion.translation(y=1))
@@ -174,13 +170,11 @@ class GetRouteOverviewPresenter:
         ]
 
     def _get_max_scale_value(self, value: float) -> Tuple[float, int]:
-        factor = 1.0
-        while value < 1:
-            factor *= 0.1
-            value *= 10
-        while value > 10:
-            factor *= 10
-            value *= 0.1
+        n = 10
+        assert value > 0
+        power_of_ten = math.ceil(math.log(value, n))
+        factor = n**power_of_ten
+        value *= n ** (-power_of_ten)
         return factor * math.ceil(value), math.ceil(value)
 
 
