@@ -1,5 +1,23 @@
 {% extends "flask_profiler/base.html" %}
 
+{% macro draw_line(line, color) %}
+{% if line.label %}
+<text style="fill: black"
+      text-anchor="end"
+      x="{{ line.x1 }}"
+      y="{{ line.y1 }}">
+    {{ line.label }}
+</text>
+{% endif %}
+<line
+    x1="{{ line.x1 }}"
+    y1="{{ line.y1 }}"
+    x2="{{ line.x2 }}"
+    y2="{{ line.y2 }}"
+    style="stroke: {{ color }}; stroke-width: 2"
+    />
+{% endmacro %}
+
 {% block headline %}
 {{ view_model.headline }}
 {% endblock %}
@@ -10,28 +28,23 @@
 <h3 class="title">{{ graph.title }}</h3>
 <svg viewBox="0 0 {{ graph.width }} {{ graph.height }}"
      height="400">
-    {% for line in graph.lines %}
-    {% if line.label %}
-    <text style="fill: black"
-          text-anchor="end"
-          x="{{ line.x1 }}"
-          y="{{ line.y1 }}">
-        {{ line.label }}
-    </text>
-    {% endif %}
-    <line
-        x1="{{ line.x1 }}"
-        y1="{{ line.y1 }}"
-        x2="{{ line.x2 }}"
-        y2="{{ line.y2 }}"
-        style="stroke: {{ line.color }}; stroke-width: 2"/>
+    {{ draw_line(graph.plot.x_axis, "black") }}
+    {{ draw_line(graph.plot.y_axis, "black") }}
+    {% for line in graph.plot.x_markings %}
+    {{ draw_line(line, "black") }}
     {% endfor %}
-    {% for point in graph.points %}
+    {% for line in graph.plot.y_markings %}
+    {{ draw_line(line, "black") }}
+    {% endfor %}
+    {% for line in graph.plot.point_connections %}
+    {{ draw_line(line, "blue") }}
+    {% endfor %}
+    {% for point in graph.plot.data_points %}
     <circle
         cx="{{ point.x }}"
         cy="{{ point.y }}"
         r="3"
-        fill="{{ point.color }}"/>
+        fill="black"/>
     {% endfor %}
 </svg>
 {% endfor %}

@@ -9,10 +9,36 @@ from flask_profiler.use_cases import get_route_overview as use_case
 
 
 @dataclass
+class Plot:
+    data_points: list[Point]
+    point_connections: list[Line]
+    x_axis: Line
+    y_axis: Line
+    x_markings: list[Line]
+    y_markings: list[Line]
+
+    def transform(self, transformation: Conversion) -> Plot:
+        return replace(
+            self,
+            data_points=[transformation.transform_point(p) for p in self.data_points],
+            point_connections=[
+                transformation.transform_line(line) for line in self.point_connections
+            ],
+            x_axis=transformation.transform_line(self.x_axis),
+            y_axis=transformation.transform_line(self.y_axis),
+            x_markings=[
+                transformation.transform_line(line) for line in self.x_markings
+            ],
+            y_markings=[
+                transformation.transform_line(line) for line in self.y_markings
+            ],
+        )
+
+
+@dataclass
 class Point:
     _x: float
     _y: float
-    color: str = "black"
 
     @property
     def x(self) -> str:
@@ -27,7 +53,6 @@ class Point:
 class Line:
     p1: Point
     p2: Point
-    color: str = "black"
     label: Optional[str] = None
 
     @property
@@ -52,8 +77,7 @@ class Graph:
     title: str
     width: str
     height: str
-    points: List[Point]
-    lines: List[Line]
+    plot: Plot
 
 
 @dataclass
@@ -112,36 +136,38 @@ class GetRouteOverviewPresenter:
             normalize_values
         )
         normalized_points = [normalize_points.transform_point(p) for p in points]
-
-        axis = [
-            Line(Point(_x=0, _y=0), Point(_x=0, _y=1)),
-            Line(Point(_x=0, _y=0), Point(_x=1, _y=0)),
-        ]
         graph_lines = [
-            Line(p1, p2, color="blue")
+            Line(p1, p2)
             for p1, p2 in zip(normalized_points[:-1], normalized_points[1:])
         ]
         axis_markings = [
             normalize_values.transform_line(marking)
             for marking in self._generate_markings(max_value, markings_count)
         ]
-        normalized_lines = axis + axis_markings + graph_lines
-
         transformation = (
             Conversion.mirror_y()
-            .concat(Conversion.translation(y=1))
-            .concat(Conversion.stretch(x=width, y=height))
-            .concat(Conversion.translation(x=-width / 2, y=-height / 2))
-            .concat(Conversion.stretch(x=0.9, y=0.9))
-            .concat(Conversion.translation(x=width / 2, y=height / 2))
-            .concat(Conversion.translation(x=left_border))
+            .concat(Conversion.translation(x=-0.5, y=0.5))  # center graph origin
+            .concat(
+                Conversion.stretch(x=width * 0.9, y=height * 0.9)
+            )  # stretch to fit final dimensions
+            .concat(
+                Conversion.translation(x=width / 2 + left_border, y=height / 2)
+            )  # move origin to left bottom corner
         )
+        plot = Plot(
+            data_points=normalized_points,
+            point_connections=graph_lines,
+            x_axis=Line(Point(_x=0, _y=0), Point(_x=1, _y=0)),
+            y_axis=Line(Point(_x=0, _y=0), Point(_x=0, _y=1)),
+            x_markings=axis_markings,
+            y_markings=[],
+        )
+        plot = plot.transform(transformation)
         return Graph(
             title=title,
             width=str(width + left_border),
             height=str(height),
-            points=[transformation.transform_point(p) for p in normalized_points],
-            lines=[transformation.transform_line(line) for line in normalized_lines],
+            plot=plot,
         )
 
     def _get_earliest_measurement(
