@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 from flask_profiler.use_cases import get_route_overview as use_case
 
@@ -11,19 +11,21 @@ from flask_profiler.use_cases import get_route_overview as use_case
 @dataclass
 class Plot:
     data_points: list[Point]
-    point_connections: list[Line]
     x_axis: Line
     y_axis: Line
     x_markings: list[Line]
     y_markings: list[Line]
 
+    @property
+    def point_connections(self) -> Iterable[Line]:
+        return [
+            Line(p1, p2) for p1, p2 in zip(self.data_points[:-1], self.data_points[1:])
+        ]
+
     def transform(self, transformation: Conversion) -> Plot:
         return replace(
             self,
             data_points=[transformation.transform_point(p) for p in self.data_points],
-            point_connections=[
-                transformation.transform_line(line) for line in self.point_connections
-            ],
             x_axis=transformation.transform_line(self.x_axis),
             y_axis=transformation.transform_line(self.y_axis),
             x_markings=[
@@ -131,20 +133,18 @@ class GetRouteOverviewPresenter:
                 if measurement.value is not None
             ]
         max_value, markings_count = self._get_max_scale_value(max(p._y for p in points))
-        normalize_values = Conversion.stretch(y=1 / max_value)
-        normalize_points = Conversion.stretch(x=1 / interval_length_in_days).concat(
-            normalize_values
+        normalize_points = Conversion.stretch(
+            x=1 / interval_length_in_days, y=1 / max_value
         )
         normalized_points = [normalize_points.transform_point(p) for p in points]
-        graph_lines = [
-            Line(p1, p2)
-            for p1, p2 in zip(normalized_points[:-1], normalized_points[1:])
-        ]
-        axis_markings = [
-            normalize_values.transform_line(marking)
-            for marking in self._generate_markings(max_value, markings_count)
-        ]
-        transformation = (
+        plot = Plot(
+            data_points=normalized_points,
+            x_axis=Line(Point(_x=0, _y=0), Point(_x=1, _y=0)),
+            y_axis=Line(Point(_x=0, _y=0), Point(_x=0, _y=1)),
+            x_markings=self._generate_markings(max_value, markings_count),
+            y_markings=[],
+        )
+        plot = plot.transform(
             Conversion.mirror_y()
             .concat(Conversion.translation(x=-0.5, y=0.5))  # center graph origin
             .concat(
@@ -154,15 +154,6 @@ class GetRouteOverviewPresenter:
                 Conversion.translation(x=width / 2 + left_border, y=height / 2)
             )  # move origin to left bottom corner
         )
-        plot = Plot(
-            data_points=normalized_points,
-            point_connections=graph_lines,
-            x_axis=Line(Point(_x=0, _y=0), Point(_x=1, _y=0)),
-            y_axis=Line(Point(_x=0, _y=0), Point(_x=0, _y=1)),
-            x_markings=axis_markings,
-            y_markings=[],
-        )
-        plot = plot.transform(transformation)
         return Graph(
             title=title,
             width=str(width + left_border),
@@ -188,8 +179,8 @@ class GetRouteOverviewPresenter:
         dx = 0.01
         return [
             Line(
-                Point(_x=0 - dx, _y=n / markings_count * scale_max_value),
-                Point(_x=0 + dx, _y=n / markings_count * scale_max_value),
+                Point(_x=0 - dx, _y=n / markings_count),
+                Point(_x=0 + dx, _y=n / markings_count),
                 label=f"{n/markings_count * scale_max_value * 1000:.2f} ms",
             )
             for n in range(1, markings_count + 1)
