@@ -40,7 +40,7 @@ class GetDetailsUseCase:
         results = self.archivist.get_records()
         if request.method_filter is not None:
             results = results.with_method(request.method_filter)
-        if request.name_filter is not None:
+        if request.name_filter:
             results = results.with_name_containing(request.name_filter)
         if request.requested_after is not None:
             results = results.requested_after(request.requested_after)
