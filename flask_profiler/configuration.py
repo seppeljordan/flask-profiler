@@ -13,8 +13,9 @@ from .sqlite import Sqlite
 logger = getLogger(__name__)
 
 
-class MeasurementDatabase(measurement_archive.MeasurementArchivist, Database, Protocol):
-    ...
+class MeasurementDatabase(
+    measurement_archive.MeasurementArchivist, Database, Protocol
+): ...
 
 
 class DeferredArchivist:

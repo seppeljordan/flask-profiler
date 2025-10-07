@@ -196,9 +196,9 @@ class IntervalSummaryBuilder:
         interval_index: int
 
     def __init__(self, timestamps: List[datetime]) -> None:
-        self.summaries: Dict[
-            IntervalSummaryBuilder.SummaryKey, List[Record]
-        ] = defaultdict(list)
+        self.summaries: Dict[IntervalSummaryBuilder.SummaryKey, List[Record]] = (
+            defaultdict(list)
+        )
         self.timestamps = timestamps
 
     def add_record(self, record: Record) -> None:

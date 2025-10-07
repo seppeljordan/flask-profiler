@@ -22,11 +22,11 @@ class RouteWrapper:
         their original behavior.
         """
         for endpoint, func in app.view_functions.items():
-            app.view_functions[
-                endpoint
-            ] = self.measured_route_factory.create_measured_route(
-                original_route=func,
-                route_name=endpoint,
+            app.view_functions[endpoint] = (
+                self.measured_route_factory.create_measured_route(
+                    original_route=func,
+                    route_name=endpoint,
+                )
             )
 
 

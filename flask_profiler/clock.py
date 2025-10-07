@@ -3,8 +3,7 @@ from typing import Protocol
 
 
 class Clock(Protocol):
-    def utc_now(self) -> datetime:
-        ...
+    def utc_now(self) -> datetime: ...
 
 
 class SystemClock:

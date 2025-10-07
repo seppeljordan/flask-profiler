@@ -6,11 +6,9 @@ from flask import request
 
 
 class HttpRequest(Protocol):
-    def get_arguments(self) -> Dict[str, str]:
-        ...
+    def get_arguments(self) -> Dict[str, str]: ...
 
-    def path_arguments(self) -> Dict[str, Any]:
-        ...
+    def path_arguments(self) -> Dict[str, Any]: ...
 
 
 @dataclass(frozen=True)
