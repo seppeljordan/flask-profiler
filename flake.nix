@@ -61,8 +61,8 @@
               ${pythonEnv}/bin/mypy
               mkdir $out
             '';
-            python311-package = pkgs.python311.pkgs.flask-profiler;
             python312-package = pkgs.python312.pkgs.flask-profiler;
+            python313-package = pkgs.python313.pkgs.flask-profiler;
           };
         });
       supportedSystems = flake-utils.lib.defaultSystems;
