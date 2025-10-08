@@ -14,7 +14,7 @@
             inherit system;
             overlays = [ self.overlays.default ];
           };
-          python = pkgs.python310;
+          python = pkgs.python312;
           pythonEnv =
             python.withPackages (p: [ p.mypy p.flake8 p.isort p.black ]
               ++ python.pkgs.flask-profiler.buildInputs
@@ -61,9 +61,8 @@
               ${pythonEnv}/bin/mypy
               mkdir $out
             '';
-            python39-package = pkgs.python39.pkgs.flask-profiler;
-            python310-package = pkgs.python310.pkgs.flask-profiler;
-            python311-package = pkgs.python311.pkgs.flask-profiler;
+            python312-package = pkgs.python312.pkgs.flask-profiler;
+            python313-package = pkgs.python313.pkgs.flask-profiler;
           };
         });
       supportedSystems = flake-utils.lib.defaultSystems;

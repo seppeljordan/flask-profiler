@@ -6,8 +6,6 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable, Dict, Generic, Iterator, List, Optional, TypeVar
 
-from typing_extensions import Self
-
 from flask_profiler.entities.measurement_archive import Measurement, Record, Summary
 
 T = TypeVar("T")
@@ -67,28 +65,28 @@ class IteratorBasedData(Generic[T]):
 
 class RecordedMeasurements(IteratorBasedData[Record]):
     def with_method(self, method: str) -> RecordedMeasurements:
-        return replace(
-            self, items=lambda: filter(lambda i: i.method == method, self.items())
+        return RecordedMeasurements(
+            items=lambda: filter(lambda i: i.method == method, self.items())
         )
 
     def with_name_containing(self, substring: str) -> RecordedMeasurements:
-        return replace(
-            self, items=lambda: filter(lambda i: substring in i.name, self.items())
+        return RecordedMeasurements(
+            items=lambda: filter(lambda i: substring in i.name, self.items())
         )
 
     def with_name(self, name: str) -> RecordedMeasurements:
-        return replace(
-            self, items=lambda: filter(lambda i: name == i.name, self.items())
+        return RecordedMeasurements(
+            items=lambda: filter(lambda i: name == i.name, self.items())
         )
 
     def requested_after(self, t: datetime) -> RecordedMeasurements:
-        return replace(
-            self, items=lambda: filter(lambda i: t <= i.start_timestamp, self.items())
+        return RecordedMeasurements(
+            items=lambda: filter(lambda i: t <= i.start_timestamp, self.items())
         )
 
     def requested_before(self, t: datetime) -> RecordedMeasurements:
-        return replace(
-            self, items=lambda: filter(lambda i: t > i.start_timestamp, self.items())
+        return RecordedMeasurements(
+            items=lambda: filter(lambda i: t > i.start_timestamp, self.items())
         )
 
     def summarize(self) -> SummarizedMeasurements:
@@ -109,38 +107,43 @@ class RecordedMeasurements(IteratorBasedData[Record]):
         )
 
     def with_id(self, id_: int) -> RecordedMeasurements:
-        return replace(self, items=lambda: filter(lambda i: i.id == id_, self.items()))
+        return RecordedMeasurements(
+            items=lambda: filter(lambda i: i.id == id_, self.items())
+        )
 
     def ordered_by_start_time(self, ascending: bool = True) -> RecordedMeasurements:
-        return replace(
-            self,
-            items=lambda: sorted(
-                list(self.items()),
-                key=lambda measurement: measurement.start_timestamp,
-                reverse=not ascending,
-            ),
+        return RecordedMeasurements(
+            items=lambda: iter(
+                sorted(
+                    list(self.items()),
+                    key=lambda measurement: measurement.start_timestamp,
+                    reverse=not ascending,
+                )
+            )
         )
 
 
 class SummarizedMeasurements(IteratorBasedData[Summary]):
-    def sorted_by_avg_elapsed(self, ascending: bool = True) -> Self:
-        return replace(
-            self,
-            items=lambda: sorted(
-                list(self.items()),
-                reverse=not ascending,
-                key=lambda summary: summary.avg_elapsed,
-            ),
+    def sorted_by_avg_elapsed(self, ascending: bool = True) -> SummarizedMeasurements:
+        return SummarizedMeasurements(
+            items=lambda: iter(
+                sorted(
+                    list(self.items()),
+                    reverse=not ascending,
+                    key=lambda summary: summary.avg_elapsed,
+                )
+            )
         )
 
-    def sorted_by_route_name(self, ascending: bool = True) -> Self:
-        return replace(
-            self,
-            items=lambda: sorted(
-                list(self.items()),
-                reverse=not ascending,
-                key=lambda summary: summary.name,
-            ),
+    def sorted_by_route_name(self, ascending: bool = True) -> SummarizedMeasurements:
+        return SummarizedMeasurements(
+            items=lambda: iter(
+                sorted(
+                    list(self.items()),
+                    reverse=not ascending,
+                    key=lambda summary: summary.name,
+                )
+            )
         )
 
 
@@ -196,9 +199,9 @@ class IntervalSummaryBuilder:
         interval_index: int
 
     def __init__(self, timestamps: List[datetime]) -> None:
-        self.summaries: Dict[
-            IntervalSummaryBuilder.SummaryKey, List[Record]
-        ] = defaultdict(list)
+        self.summaries: Dict[IntervalSummaryBuilder.SummaryKey, List[Record]] = (
+            defaultdict(list)
+        )
         self.timestamps = timestamps
 
     def add_record(self, record: Record) -> None:

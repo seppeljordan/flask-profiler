@@ -72,11 +72,15 @@ class GetDetailsPresenter:
             ),
             method_filter_text=response.request.method_filter or "",
             name_filter_text=response.request.name_filter or "",
-            requested_after_filter_text=""
-            if response.request.requested_after is None
-            else response.request.requested_after.isoformat(),
-            requested_before_filter_text=""
-            if response.request.requested_before is None
-            else response.request.requested_before.isoformat(),
+            requested_after_filter_text=(
+                ""
+                if response.request.requested_after is None
+                else response.request.requested_after.isoformat()
+            ),
+            requested_before_filter_text=(
+                ""
+                if response.request.requested_before is None
+                else response.request.requested_before.isoformat()
+            ),
         )
         return view_model

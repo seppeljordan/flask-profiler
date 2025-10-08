@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
-from flask import Response as FlaskResponse
 from flask import request
 
 from .clock import Clock
@@ -13,7 +12,7 @@ from .configuration import Configuration
 from .entities.measurement_archive import MeasurementArchivist
 from .use_cases import observe_request_handling_use_case as use_case
 
-ResponseT = Union[str, FlaskResponse]
+ResponseT = Any
 logger = logging.getLogger(__name__)
 
 
@@ -56,7 +55,7 @@ class MeasuredRouteFactory:
 
     def create_measured_route(
         self, route_name: str, original_route: Callable[..., ResponseT]
-    ) -> MeasuredRoute:
+    ) -> Callable[..., ResponseT]:
         logger.debug("Measuring calls to route %s", route_name)
         request_handler = RequestHandler(
             route_name=route_name, original_route=original_route

@@ -7,58 +7,47 @@ from typing import Any, List, Optional, Protocol, Tuple, Union
 
 
 class Expression(Protocol):
-    def as_expression(self) -> str:
-        ...
+    def as_expression(self) -> str: ...
 
 
 class FromClause(Protocol):
-    def as_from_clause(self) -> str:
-        ...
+    def as_from_clause(self) -> str: ...
 
 
 class SelectorClause(Protocol):
-    def as_selector_clause(self) -> str:
-        ...
+    def as_selector_clause(self) -> str: ...
 
 
 class Query(Protocol):
-    def as_query(self) -> str:
-        ...
+    def as_query(self) -> str: ...
 
 
 class Vector(Protocol):
-    def as_vector(self) -> str:
-        ...
+    def as_vector(self) -> str: ...
 
 
 class Selector(Protocol):
-    def as_selector(self) -> str:
-        ...
+    def as_selector(self) -> str: ...
 
 
 class Statement(Protocol):
-    def as_statement(self) -> str:
-        ...
+    def as_statement(self) -> str: ...
 
 
 class PragmaValue(Protocol):
-    def as_pragma_value(self) -> str:
-        ...
+    def as_pragma_value(self) -> str: ...
 
 
 class ColumnConstraint(Protocol):
-    def as_column_constraint(self) -> str:
-        ...
+    def as_column_constraint(self) -> str: ...
 
 
 class JoinConstraint(Protocol):
-    def as_join_constraint(self) -> str:
-        ...
+    def as_join_constraint(self) -> str: ...
 
 
 class Ordering(Expression, Protocol):
-    def is_ascending(self) -> bool:
-        ...
+    def is_ascending(self) -> bool: ...
 
 
 # Statements
@@ -103,9 +92,11 @@ class Select:
     def and_where(self, expression: Expression) -> Select:
         return replace(
             self,
-            where_clause=expression
-            if self.where_clause is None
-            else BinaryOp("AND", self.where_clause, expression),
+            where_clause=(
+                expression
+                if self.where_clause is None
+                else BinaryOp("AND", self.where_clause, expression)
+            ),
         )
 
     def __str__(self) -> str:

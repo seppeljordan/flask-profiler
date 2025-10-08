@@ -181,7 +181,7 @@ class GetRouteOverviewPresenter:
             Line(
                 Point(_x=0 - dx, _y=n / markings_count),
                 Point(_x=0 + dx, _y=n / markings_count),
-                label=f"{n/markings_count * scale_max_value * 1000:.2f} ms",
+                label=f"{n / markings_count * scale_max_value * 1000:.2f} ms",
             )
             for n in range(1, markings_count + 1)
         ]
